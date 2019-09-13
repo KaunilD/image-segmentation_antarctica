@@ -1,4 +1,4 @@
-#### Semantic Segmentation of Antarctica using Deep Learning and Computer Vision.
+#### Delineation of bedrock structures in Antarctica using Deep Learning and Computer Vision.
 
 ##### Research with [Dr. Michael John Willis](https://cires.colorado.edu/council-fellows/michael-willis) @ [CIRES](https://cires.colorado.edu/), CU Boulder
 
