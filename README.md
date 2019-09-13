@@ -1,12 +1,9 @@
 #### Semantic Segmentation of Antarctica using Deep Learning and Computer Vision.
 
-##### IS with Dr. Michael John Willis @ CIRES, CU Boulder
+##### Research with [Dr. Michael John Willis](https://cires.colorado.edu/council-fellows/michael-willis) @ [CIRES](https://cires.colorado.edu/), CU Boulder
 
 #### Quick Links:
 
 1. [Deep Learning]()
 2. [Pre-Processing]()
 3. [Notebooks]()
-
-
-
