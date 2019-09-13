@@ -7,3 +7,9 @@
 1. [Deep Learning]()
 2. [Pre-Processing]()
 3. [Notebooks]()
+
+#### Roadmap:
+
+- [x] Polygons from shapefiles as ground-truth
+- [ ] Polygons + DEM as ground-truth
+
