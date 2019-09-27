@@ -126,3 +126,4 @@ dmypy.json
 *.tif
 data/shapefiles/PGC_LIMA_VALID_4326-84.shp
 data/shapefiles/PGC_LIMA_ADD_rocks_unpublished.shp
+*.shp

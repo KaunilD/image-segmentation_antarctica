@@ -8,68 +8,10 @@ import os
 
 os.environ["GDAL_DATA"] = 'C:\\Users\\dhruv\\.conda\\envs\\geology\\Library\\share\\gdal'
 
-
 GEOTIF_PATH = '../data/gettiffs/dryvalleys/*.tif'
 SHP_PATH = '../data/shapefiles/dryvalleys/image_id*.shp'
 
 SHP_MASTER = '../data/shapefiles/PGC_LIMA_VALID_4326-84.shp'
-
-vmin = 0 # minimum value in your data (will be black in the output)
-vmax = 255 # minimum value in your data (will be white in the output)
-
-
-def get_extent(gt,cols,rows):
-    ''' Return list of corner coordinates from a geotransform
-
-        @type gt:   C{tuple/list}
-        @param gt: geotransform
-        @type cols:   C{int}
-        @param cols: number of columns in the dataset
-        @type rows:   C{int}
-        @param rows: number of rows in the dataset
-        @rtype:    C{[float,...,float]}
-        @return:   coordinates of each corner
-    '''
-    ext=[]
-    xarr=[0,cols]
-    yarr=[0,rows]
-
-    for px in xarr:
-        for py in yarr:
-            x=gt[0]+(px*gt[1])+(py*gt[2])
-            y=gt[3]+(px*gt[4])+(py*gt[5])
-            ext.append([x,y])
-        yarr.reverse()
-    return ext
-
-def reproject_coords(coords,src_srs,tgt_srs):
-    ''' Reproject a list of x,y coordinates.
-
-        @type geom:     C{tuple/list}
-        @param geom:    List of [[x,y],...[x,y]] coordinates
-        @type src_srs:  C{osr.SpatialReference}
-        @param src_srs: OSR SpatialReference object
-        @type tgt_srs:  C{osr.SpatialReference}
-        @param tgt_srs: OSR SpatialReference object
-        @rtype:         C{tuple/list}
-        @return:        List of transformed [[x,y],...[x,y]] coordinates
-    '''
-    trans_coords=[]
-    transform = osr.CoordinateTransformation( src_srs, tgt_srs)
-    for x,y in coords:
-        x,y,z = transform.TransformPoint(x,y)
-        trans_coords.append([x,y])
-    return trans_coords
-
-def lonlat2xy(lonlat, map_shape, bbox):
-    w, h = map_shape[:2]
-
-    lon, lat = lonlat
-    x, y = 0, 0
-
-    x = ((lon - bbox[0])/(bbox[2]-bbox[0]))*w
-    y = ((lat - bbox[1])/(bbox[3]-bbox[1]))*h
-    return int(x), int(y)
 
 class Image(object):
     def __init__(self, path):
@@ -131,15 +73,6 @@ if __name__ == "__main__":
         print("Processing: {}".format(image_id))
         print()
 
-        tif_ds = gdal.Open(
-            image_id2image[image_id].get_path()
-        )
-
-        tif_srs = osr.SpatialReference()
-        tif_srs.ImportFromWkt(tif_ds.GetProjection())
-
-
-
         print("Clipping {}.shp from {}".format(image_id, SHP_MASTER))
         bbox = image_id2image[image_id].get_bbox()
         os.system(
@@ -157,41 +90,33 @@ if __name__ == "__main__":
         inDataSource = inDriver.Open(inShapefile, 0)
         inLayer = inDataSource.GetLayer()
         extent = inLayer.GetExtent()
-        extent = reproject_coords([[extent[0], extent[3]], [extent[1], extent[2]]], shp_master_srs, tif_srs)
         print(extent)
 
         print("Warping {}_rgb.png".format(image_id))
+        gdal.Warp(
+            "{}_4326.tif".format(image_id),
+            image_id2image[image_id].get_path(),
+            options=gdal.WarpOptions(
+                dstSRS='EPSG:4326'
+            )
+        )
         tif_ds = gdal.Translate(
-            "{}_rgb.png".format(image_id), image_id2image[image_id].get_path(),
+            "{}_4326_cropped.png".format(image_id), "{}_4326.tif".format(image_id),
             format='PNG', outputType=gdal.GDT_Byte,
-            projWin = [extent[0][0], extent[0][1], extent[1][0], extent[1][1]],
-            projWinSRS = 'EPSG:3031',
+            projWin = [extent[0], extent[3], extent[1], extent[2]],
+            projWinSRS = 'EPSG:4326',
             scaleParams=[[173, 852], [222, 1247], [147, 884]],
         )
 
-        tif_ds = gdal.Open(
-            '{}_rgb.tif'.format(image_id),
-        )
         w = tif_ds.RasterXSize
         h = tif_ds.RasterYSize
-
-        """
-        gt = tif_ds.GetGeoTransform()
-        ext = get_extent(gt, w, h)
-
-        tif_srs = osr.SpatialReference()
-        tif_srs.ImportFromWkt(tif_ds.GetProjection())
-
-
-        ext = reproject_coords(ext, shp_master_srs, tif_srs)
-        """
 
         print("Raster WIDTH = {} HEIGHT = {}".format(w, h))
         print()
         # get raster data
         print("Rasterizing {}.shp to {}_mask.tif".format(image_id, image_id))
         ds = gdal.Rasterize(
-            '{}_mask.tif'.format(image_id),
+            '{}_mask_4326.tif'.format(image_id),
             '{}.shp'.format(image_id),
 
             options=gdal.RasterizeOptions(
@@ -204,4 +129,5 @@ if __name__ == "__main__":
                 outputBounds = image_id2image[image_id].get_bbox()
             )
         )
+
         print()
