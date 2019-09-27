@@ -8,8 +8,9 @@ import os
 
 os.environ["GDAL_DATA"] = 'C:\\Users\\dhruv\\.conda\\envs\\geology\\Library\\share\\gdal'
 
+OUT_SUFFIX = '../data/pre-processed/dryvalleys/QB02'
 GEOTIF_PATH = '../data/gettiffs/dryvalleys/*.tif'
-SHP_PATH = '../data/shapefiles/dryvalleys/image_id*.shp'
+SHP_PATH = '../data/shapefiles/dryvalleys/QB02'
 
 SHP_MASTER = '../data/shapefiles/PGC_LIMA_VALID_4326-84.shp'
 
@@ -56,15 +57,6 @@ if __name__ == "__main__":
         image = Image(path)
         image_id2image[image.get_id()] = image
 
-    for path in glob.glob(SHP_PATH):
-        sf = shapefile.Reader(path)
-        shapeRecs = sf.shapeRecords()
-        for shapeRec in shapeRecs:
-            image_id = shapeRec.record[0]
-            shape = shapeRec.shape.bbox
-            if image_id in image_id2image:
-                image_id2image[image_id].set_bbox(shape)
-
     shp_master_ds = driver.Open(SHP_MASTER, 1)
     layer = shp_master_ds.GetLayer()
     shp_master_srs = layer.GetSpatialRef()
@@ -73,35 +65,36 @@ if __name__ == "__main__":
         print("Processing: {}".format(image_id))
         print()
 
-        print("Clipping {}.shp from {}".format(image_id, SHP_MASTER))
+        print("Clipping {}/image_id_{}.shp from {}".format(SHP_PATH, image_id, SHP_MASTER))
         bbox = image_id2image[image_id].get_bbox()
         os.system(
-            'ogr2ogr -f "ESRI Shapefile" {}.shp {} -clipsrc {}'
+            'ogr2ogr -f "ESRI Shapefile" {}/{}.shp {} -clipsrc {}'
             .format(
+            OUT_SUFFIX,
             image_id,
             SHP_MASTER,
-            '../data/shapefiles/dryvalleys/image_id_{}.shp'.format(image_id)
+            '{}/image_id_{}.shp'.format(SHP_PATH, image_id)
             )
         )
 
         # Get a Layer's Extent
-        inShapefile = '{}.shp'.format(image_id)
+        inShapefile = '{}/{}.shp'.format(OUT_SUFFIX, image_id)
         inDriver = ogr.GetDriverByName("ESRI Shapefile")
         inDataSource = inDriver.Open(inShapefile, 0)
         inLayer = inDataSource.GetLayer()
         extent = inLayer.GetExtent()
-        print(extent)
 
-        print("Warping {}_rgb.png".format(image_id))
+        print("Warping {}/{}_4326.tif".format(OUT_SUFFIX, image_id))
         gdal.Warp(
-            "{}_4326.tif".format(image_id),
+            "{}/{}_4326.tif".format(OUT_SUFFIX, image_id),
             image_id2image[image_id].get_path(),
             options=gdal.WarpOptions(
                 dstSRS='EPSG:4326'
             )
         )
+
         tif_ds = gdal.Translate(
-            "{}_4326_cropped.png".format(image_id), "{}_4326.tif".format(image_id),
+            "{}/{}_4326_cropped.png".format(OUT_SUFFIX, image_id), "{}/{}_4326.tif".format(OUT_SUFFIX, image_id),
             format='PNG', outputType=gdal.GDT_Byte,
             projWin = [extent[0], extent[3], extent[1], extent[2]],
             projWinSRS = 'EPSG:4326',
@@ -111,13 +104,12 @@ if __name__ == "__main__":
         w = tif_ds.RasterXSize
         h = tif_ds.RasterYSize
 
-        print("Raster WIDTH = {} HEIGHT = {}".format(w, h))
-        print()
         # get raster data
-        print("Rasterizing {}.shp to {}_mask.tif".format(image_id, image_id))
+        print("Rasterizing {}/{}.shp to {}/{}_4326_mask.png".format(OUT_SUFFIX, image_id, OUT_SUFFIX, image_id))
+        print("\tWIDTH = {} HEIGHT = {}".format(w, h))
         ds = gdal.Rasterize(
-            '{}_mask_4326.tif'.format(image_id),
-            '{}.shp'.format(image_id),
+            '{}/{}_mask_4326.png'.format(OUT_SUFFIX, image_id),
+            '{}/{}.shp'.format(OUT_SUFFIX, image_id),
 
             options=gdal.RasterizeOptions(
                 burnValues=255,
