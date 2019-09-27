@@ -10,7 +10,7 @@ os.environ["GDAL_DATA"] = 'C:\\Users\\dhruv\\.conda\\envs\\geology\\Library\\sha
 
 
 GEOTIF_PATH = '../data/gettiffs/dryvalleys/*.tif'
-SHP_PATH = '../data/shapefiles/dryvalleys/*.shp'
+SHP_PATH = '../data/shapefiles/dryvalleys/image_id*.shp'
 
 SHP_MASTER = '../data/shapefiles/PGC_LIMA_VALID_4326-84.shp'
 
@@ -106,6 +106,7 @@ class Image(object):
         self._bbox = data
 
 if __name__ == "__main__":
+    driver = ogr.GetDriverByName("ESRI Shapefile")
     image_id2image = {}
     image_id2polygons = {}
 
@@ -122,56 +123,85 @@ if __name__ == "__main__":
             if image_id in image_id2image:
                 image_id2image[image_id].set_bbox(shape)
 
+    shp_master_ds = driver.Open(SHP_MASTER, 1)
+    layer = shp_master_ds.GetLayer()
+    shp_master_srs = layer.GetSpatialRef()
+
     for image_id in image_id2image.keys():
         print("Processing: {}".format(image_id))
-
-
-        print("Generating RGB mask {}_rgb.png".format(image_id))
-        ds = gdal.Translate(
-            "{}_rgb.png".format(image_id), image_id2image[image_id].get_path(),
-            format='PNG', outputType=gdal.GDT_Byte,
-            scaleParams=[[173, 852], [222, 1247], [147, 884]],
-        )
-        gt = ds.GetGeoTransform()
-        w = ds.RasterXSize
-        h = ds.RasterYSize
-        ext = get_extent(gt, w, h)
-
-        src_srs = osr.SpatialReference()
-        src_srs.ImportFromWkt(ds.GetProjection())
-
-        tgt_srs = osr.SpatialReference()
-        tgt_srs.ImportFromEPSG(4326)
-
-        ext = reproject_coords(ext, src_srs, tgt_srs)
-
-        print("Raster WIDTH = {} HEIGHT = {}".format(w, h))
-        print(ext)
         print()
+
+        tif_ds = gdal.Open(
+            image_id2image[image_id].get_path()
+        )
+
+        tif_srs = osr.SpatialReference()
+        tif_srs.ImportFromWkt(tif_ds.GetProjection())
+
+
 
         print("Clipping {}.shp from {}".format(image_id, SHP_MASTER))
         bbox = image_id2image[image_id].get_bbox()
         os.system(
-            'ogr2ogr -f "ESRI Shapefile" {}.shp {} -clipsrc {} {} {} {}'
+            'ogr2ogr -f "ESRI Shapefile" {}.shp {} -clipsrc {}'
             .format(
             image_id,
             SHP_MASTER,
-            bbox[0], bbox[1],
-            bbox[2], bbox[3]
+            '../data/shapefiles/dryvalleys/image_id_{}.shp'.format(image_id)
             )
         )
+
+        # Get a Layer's Extent
+        inShapefile = '{}.shp'.format(image_id)
+        inDriver = ogr.GetDriverByName("ESRI Shapefile")
+        inDataSource = inDriver.Open(inShapefile, 0)
+        inLayer = inDataSource.GetLayer()
+        extent = inLayer.GetExtent()
+        extent = reproject_coords([[extent[0], extent[3]], [extent[1], extent[2]]], shp_master_srs, tif_srs)
+        print(extent)
+
+        print("Warping {}_rgb.png".format(image_id))
+        tif_ds = gdal.Translate(
+            "{}_rgb.png".format(image_id), image_id2image[image_id].get_path(),
+            format='PNG', outputType=gdal.GDT_Byte,
+            projWin = [extent[0][0], extent[0][1], extent[1][0], extent[1][1]],
+            projWinSRS = 'EPSG:3031',
+            scaleParams=[[173, 852], [222, 1247], [147, 884]],
+        )
+
+        tif_ds = gdal.Open(
+            '{}_rgb.tif'.format(image_id),
+        )
+        w = tif_ds.RasterXSize
+        h = tif_ds.RasterYSize
+
+        """
+        gt = tif_ds.GetGeoTransform()
+        ext = get_extent(gt, w, h)
+
+        tif_srs = osr.SpatialReference()
+        tif_srs.ImportFromWkt(tif_ds.GetProjection())
+
+
+        ext = reproject_coords(ext, shp_master_srs, tif_srs)
+        """
+
+        print("Raster WIDTH = {} HEIGHT = {}".format(w, h))
         print()
         # get raster data
         print("Rasterizing {}.shp to {}_mask.tif".format(image_id, image_id))
         ds = gdal.Rasterize(
             '{}_mask.tif'.format(image_id),
             '{}.shp'.format(image_id),
+
             options=gdal.RasterizeOptions(
                 burnValues=255,
+                allTouched=True,
                 width = w,
                 height = h,
                 outputSRS = 'EPSG:4326',
-                outputType = gdal.GDT_Byte
+                outputType = gdal.GDT_Byte,
+                outputBounds = image_id2image[image_id].get_bbox()
             )
         )
         print()
