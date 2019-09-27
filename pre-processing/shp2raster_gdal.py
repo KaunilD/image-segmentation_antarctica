@@ -6,6 +6,7 @@ import math
 from osgeo import gdal, ogr, osr
 import os
 
+os.environ["GDAL_DATA"] = 'C:\\Users\\dhruv\\.conda\\envs\\geology\\Library\\share\\gdal'
 
 
 GEOTIF_PATH = '../data/gettiffs/dryvalleys/*.tif'
@@ -122,10 +123,33 @@ if __name__ == "__main__":
                 image_id2image[image_id].set_bbox(shape)
 
     for image_id in image_id2image.keys():
-        image_fn = '{}.png'.format(image_id)
         print("Processing: {}".format(image_id))
 
-        print("\tClipping {}.shp from {}".format(image_id, SHP_MASTER))
+
+        print("Generating RGB mask {}_rgb.png".format(image_id))
+        ds = gdal.Translate(
+            "{}_rgb.png".format(image_id), image_id2image[image_id].get_path(),
+            format='PNG', outputType=gdal.GDT_Byte,
+            scaleParams=[[173, 852], [222, 1247], [147, 884]],
+        )
+        gt = ds.GetGeoTransform()
+        w = ds.RasterXSize
+        h = ds.RasterYSize
+        ext = get_extent(gt, w, h)
+
+        src_srs = osr.SpatialReference()
+        src_srs.ImportFromWkt(ds.GetProjection())
+
+        tgt_srs = osr.SpatialReference()
+        tgt_srs.ImportFromEPSG(4326)
+
+        ext = reproject_coords(ext, src_srs, tgt_srs)
+
+        print("Raster WIDTH = {} HEIGHT = {}".format(w, h))
+        print(ext)
+        print()
+
+        print("Clipping {}.shp from {}".format(image_id, SHP_MASTER))
         bbox = image_id2image[image_id].get_bbox()
         os.system(
             'ogr2ogr -f "ESRI Shapefile" {}.shp {} -clipsrc {} {} {} {}'
@@ -136,36 +160,18 @@ if __name__ == "__main__":
             bbox[2], bbox[3]
             )
         )
-
-        print("Getting parameters from {}".format(image_id2image[image_id].get_path()))
-        ds = gdal.Open(image_id2image[image_id].get_path())
-        w = ds.RasterXSize
-        h = ds.RasterYSize
-        print(w, h)
+        print()
         # get raster data
-        print("\tRasterizing {}.shp to {}_mask.tif".format(image_id, image_id))
-        os.system(
-            'gdal_rasterize -burn 255 -ts {} {} {}.shp mask_{}.tif'
-            .format(
-                w, h,
-                image_id, image_id
+        print("Rasterizing {}.shp to {}_mask.tif".format(image_id, image_id))
+        ds = gdal.Rasterize(
+            '{}_mask.tif'.format(image_id),
+            '{}.shp'.format(image_id),
+            options=gdal.RasterizeOptions(
+                burnValues=255,
+                width = w,
+                height = h,
+                outputSRS = 'EPSG:4326',
+                outputType = gdal.GDT_Byte
             )
         )
-        print("\tWarping CRS to mask_{}.tif".format(image_id))
-        ds = gdal.Warp(
-            'epsg4326_mask_{}.tif'.format(image_id),
-            'mask_{}.tif'.format(image_id),
-            dstSRS='EPSG:4326',
-            outputType=gdal.GDT_Int32
-        )
-        """
-        gdal_translate .\\QB02_20120203205614_101001000EDC4600_12FEB03205614-M1BS-052813648020_01_P001_u16ns3031.tif
-        -b 1 -b 2 -b 3
-        rgb.tif
-        -scale_1 173 852 0 65535
-        -scale_2 222 1247 0 65535
-        -scale_3 147 884 0 65535
-        -co COMPRESS=DEFLATE
-        -co PHOTOMETRIC=RGB
-         """
-        ds = None
+        print()
