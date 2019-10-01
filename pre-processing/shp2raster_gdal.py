@@ -92,13 +92,18 @@ if __name__ == "__main__":
                 dstSRS='EPSG:4326'
             )
         )
-
+        tif_ds = gdal.Open(image_id2image[image_id].get_path())
         tif_ds = gdal.Translate(
             "{}/{}_4326_cropped.png".format(OUT_SUFFIX, image_id), "{}/{}_4326.tif".format(OUT_SUFFIX, image_id),
             format='PNG', outputType=gdal.GDT_Byte,
             projWin = [extent[0], extent[3], extent[1], extent[2]],
             projWinSRS = 'EPSG:4326',
-            scaleParams=[[173, 852], [222, 1247], [147, 884]],
+            bandList=[4, 3, 2],
+            scaleParams=[
+                [tif_ds.GetRasterBand(4).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(4).GetStatistics(0, 1)[1]],
+                [tif_ds.GetRasterBand(3).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(3).GetStatistics(0, 1)[1]],
+                [tif_ds.GetRasterBand(2).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(2).GetStatistics(0, 1)[1]],
+            ],
         )
 
         w = tif_ds.RasterXSize
@@ -108,7 +113,7 @@ if __name__ == "__main__":
         print("Rasterizing {}/{}.shp to {}/{}_4326_mask.png".format(OUT_SUFFIX, image_id, OUT_SUFFIX, image_id))
         print("\tWIDTH = {} HEIGHT = {}".format(w, h))
         ds = gdal.Rasterize(
-            '{}/{}_mask_4326.png'.format(OUT_SUFFIX, image_id),
+            '{}/{}_mask_4326.tif'.format(OUT_SUFFIX, image_id),
             '{}/{}.shp'.format(OUT_SUFFIX, image_id),
 
             options=gdal.RasterizeOptions(
@@ -118,6 +123,7 @@ if __name__ == "__main__":
                 height = h,
                 outputSRS = 'EPSG:4326',
                 outputType = gdal.GDT_Byte,
+                format='GTiff',
                 outputBounds = image_id2image[image_id].get_bbox()
             )
         )
