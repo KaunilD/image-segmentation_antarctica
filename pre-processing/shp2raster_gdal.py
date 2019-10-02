@@ -8,9 +8,9 @@ import os
 
 os.environ["GDAL_DATA"] = 'C:\\Users\\dhruv\\.conda\\envs\\geology\\Library\\share\\gdal'
 
-OUT_SUFFIX = '../data/pre-processed/dryvalleys/QB02'
+OUT_SUFFIX = '../data/pre-processed/dryvalleys/WV02'
 GEOTIF_PATH = '../data/gettiffs/dryvalleys/*.tif'
-SHP_PATH = '../data/shapefiles/dryvalleys/QB02'
+SHP_PATH = '../data/shapefiles/dryvalleys/WV02'
 
 SHP_MASTER = '../data/shapefiles/PGC_LIMA_VALID_4326-84.shp'
 
