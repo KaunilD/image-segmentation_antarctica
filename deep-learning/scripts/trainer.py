@@ -132,7 +132,10 @@ if __name__=="__main__":
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/WV02', split='train', stride=128, debug=False)
     val_gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/QB02', split='val', stride=128, debug=False)
-    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=4)
+
+    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
+    val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
+
     model = deeplab.DeepLab(output_stride=16)
     model.to(device)
     optimizer = torch.optim.SGD(
@@ -145,5 +148,22 @@ if __name__=="__main__":
 
     criterion = focal_loss
 
+    for epoch in epochs:
+        train_loss = train(model, optimizer, criterion, device, train_dataloader)
+        val_loss = validate(model, criterion, device, train_dataloader)
 
-    train(model, optimizer, criterion, device, train_dataloader)
+        state = {
+            'model': model.state_dict(),
+            'optimizer': optimizer.state_dict()
+        }
+        current_time = time.time()
+
+        model_save_str = '{}-{}-{}-{}.{}'.format(
+            "deeplabv3", "resnet", "bn2d", epoch, "pth"
+        )
+
+        torch.save(
+            state,
+            model_save_str
+        )
+        print(epoch, train_loss, val_loss)
