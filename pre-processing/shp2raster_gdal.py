@@ -12,7 +12,48 @@ OUT_SUFFIX = '../data/pre-processed/dryvalleys/WV02'
 GEOTIF_PATH = '../data/gettiffs/dryvalleys/*.tif'
 SHP_PATH = '../data/shapefiles/dryvalleys/WV02'
 
-SHP_MASTER = '../data/shapefiles/PGC_LIMA_VALID_4326-84.shp'
+SHP_MASTER = '../data/shapefiles/PGC_LIMA_VALID_3031-84.shp'
+
+def get_extent(gt,cols,rows):
+    ''' Return list of corner coordinates from a geotransform
+        @type gt:   C{tuple/list}
+        @param gt: geotransform
+        @type cols:   C{int}
+        @param cols: number of columns in the dataset
+        @type rows:   C{int}
+        @param rows: number of rows in the dataset
+        @rtype:    C{[float,...,float]}
+        @return:   coordinates of each corner
+    '''
+    ext=[]
+    xarr=[0,cols]
+    yarr=[0,rows]
+
+    for px in xarr:
+        for py in yarr:
+            x=gt[0]+(px*gt[1])+(py*gt[2])
+            y=gt[3]+(px*gt[4])+(py*gt[5])
+            ext.append([x,y])
+        yarr.reverse()
+    return ext
+
+def reproject_coords(coords,src_srs,tgt_srs):
+    ''' Reproject a list of x,y coordinates.
+        @type geom:     C{tuple/list}
+        @param geom:    List of [[x,y],...[x,y]] coordinates
+        @type src_srs:  C{osr.SpatialReference}
+        @param src_srs: OSR SpatialReference object
+        @type tgt_srs:  C{osr.SpatialReference}
+        @param tgt_srs: OSR SpatialReference object
+        @rtype:         C{tuple/list}
+        @return:        List of transformed [[x,y],...[x,y]] coordinates
+    '''
+    trans_coords=[]
+    transform = osr.CoordinateTransformation( src_srs, tgt_srs)
+    for x,y in coords:
+        x,y,z = transform.TransformPoint(x,y)
+        trans_coords.append([x,y])
+    return trans_coords
 
 class Image(object):
     def __init__(self, path):
@@ -65,39 +106,38 @@ if __name__ == "__main__":
         print("Processing: {}".format(image_id))
         print()
 
-        print("Clipping {}/image_id_{}.shp from {}".format(SHP_PATH, image_id, SHP_MASTER))
-        bbox = image_id2image[image_id].get_bbox()
-        os.system(
-            'ogr2ogr -f "ESRI Shapefile" {}/{}.shp {} -clipsrc {}'
-            .format(
-            OUT_SUFFIX,
-            image_id,
-            SHP_MASTER,
-            '{}/image_id_{}.shp'.format(SHP_PATH, image_id)
-            )
-        )
-
-        # Get a Layer's Extent
-        inShapefile = '{}/{}.shp'.format(OUT_SUFFIX, image_id)
-        inDriver = ogr.GetDriverByName("ESRI Shapefile")
-        inDataSource = inDriver.Open(inShapefile, 0)
-        inLayer = inDataSource.GetLayer()
-        extent = inLayer.GetExtent()
-
         print("Warping {}/{}_4326.tif".format(OUT_SUFFIX, image_id))
-        gdal.Warp(
+        tif_ds = gdal.Open(
+            image_id2image[image_id].get_path()
+        )
+        """
+        tif_ds = gdal.Warp(
             "{}/{}_4326.tif".format(OUT_SUFFIX, image_id),
             image_id2image[image_id].get_path(),
             options=gdal.WarpOptions(
-                dstSRS='EPSG:4326'
+                dstSRS='EPSG:4326',
+                errorThreshold=0.001
             )
         )
-        tif_ds = gdal.Open(image_id2image[image_id].get_path())
+
+        w = tif_ds.RasterXSize
+        h = tif_ds.RasterYSize
+
+        gt = tif_ds.GetGeoTransform()
+        ext_ = get_extent(gt, w, h)
+
+        tif_srs = osr.SpatialReference()
+        tif_srs.ImportFromWkt(tif_ds.GetProjection())
+
+        ext = reproject_coords(ext_, shp_master_srs, tif_srs)
+
+        print(ext)
+        print()
+        """
+
         tif_ds = gdal.Translate(
-            "{}/{}_4326_cropped.png".format(OUT_SUFFIX, image_id), "{}/{}_4326.tif".format(OUT_SUFFIX, image_id),
-            format='PNG', outputType=gdal.GDT_Byte,
-            projWin = [extent[0], extent[3], extent[1], extent[2]],
-            projWinSRS = 'EPSG:4326',
+            "{}/{}_3031.tif".format(OUT_SUFFIX, image_id), image_id2image[image_id].get_path(),
+            format='GTiff', outputType=gdal.GDT_Byte,
             bandList=[4, 3, 2],
             scaleParams=[
                 [tif_ds.GetRasterBand(4).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(4).GetStatistics(0, 1)[1]],
@@ -106,25 +146,28 @@ if __name__ == "__main__":
             ],
         )
 
+        gt = tif_ds.GetGeoTransform()
         w = tif_ds.RasterXSize
         h = tif_ds.RasterYSize
 
+        ext_ = get_extent(gt, w, h)
+        print(ext_)
         # get raster data
-        print("Rasterizing {}/{}.shp to {}/{}_4326_mask.png".format(OUT_SUFFIX, image_id, OUT_SUFFIX, image_id))
+        print("Rasterizing {}/{}.shp to {}/{}_3031_mask.png".format(OUT_SUFFIX, image_id, OUT_SUFFIX, image_id))
         print("\tWIDTH = {} HEIGHT = {}".format(w, h))
         ds = gdal.Rasterize(
-            '{}/{}_mask_4326.tif'.format(OUT_SUFFIX, image_id),
-            '{}/{}.shp'.format(OUT_SUFFIX, image_id),
+            '{}/{}_3031_mask.tif'.format(OUT_SUFFIX, image_id),
+            '{}'.format(SHP_MASTER),
 
             options=gdal.RasterizeOptions(
                 burnValues=255,
                 allTouched=True,
                 width = w,
                 height = h,
-                outputSRS = 'EPSG:4326',
+                outputSRS = 'EPSG:3031',
                 outputType = gdal.GDT_Byte,
                 format='GTiff',
-                outputBounds = image_id2image[image_id].get_bbox()
+                outputBounds = [ext_[0][0], ext_[0][1], ext_[2][0], ext_[2][1]]
             )
         )
 

@@ -1,5 +1,6 @@
 import torch
 import cv2
+from PIL import Image
 import numpy as np
 import glob
 import math
@@ -51,6 +52,9 @@ class GTiffDataset(torch_data.Dataset):
                     j:j+self.tile_size
                 ]
 
+                if np.sum(np.sum(mask_tile)) <= self.tile_size*self.tile_size:
+                    continue
+
                 i_tiles.append(img_tile)
                 m_tiles.append(mask_tile)
 
@@ -63,15 +67,15 @@ class GTiffDataset(torch_data.Dataset):
 
     def read_dir(self):
         tiles = [[], []]
-        images = sorted(glob.glob(self.root_dir + '/' + '101001000A4E4B00_4326_cropped.png'))
-        masks = sorted(glob.glob(self.root_dir + '/' + '101001000A4E4B00_mask_4326.tif'))
+        images = sorted(glob.glob(self.root_dir + '/' + '*_3031.tif'))
+        masks = sorted(glob.glob(self.root_dir + '/' + '*_3031_mask.tif'))
         for idx, [i, m] in enumerate(zip(images, masks)):
             print('Reading item # {} - {}/{}'.format(i, idx+1, len(images)))
-            image = cv2.imread(i)
-            mask = cv2.imread(m, 0)
-            _, mask = cv2.threshold(mask, 127, 1, cv2.THRESH_BINARY)
-
-            image = np.moveaxis(image, 2, 0)
+            image = Image.open(img)
+            mask = Image.open(msk)
+            image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM))
+            #image = np.moveaxis(image, 0, -1)
+            mask = np.asarray(mask)
 
             i_tiles, m_tiles = self.get_tiles(image, mask)
             for im, ma in zip(i_tiles, m_tiles):
@@ -120,6 +124,23 @@ def train(model, optimizer, criterion, device, dataloader):
         optimizer.step()
         train_loss += loss.item()
         tbar.set_description('Train loss: %.3f' % (train_loss / (i + 1)))
+    return train_loss
+
+def validate(model, criterion, device, dataloader):
+    model.eval()
+    val_loss = 0.0
+    tbar = tqdm(dataloader)
+    num_samples = len(dataloader)
+    with torch.no_grad():
+        for i, sample in enumerate(tbar):
+            image, target = sample[0].float(), sample[1].float()
+            image, target = image.to(device), target.float().to(device)
+
+            output = model(image)
+            loss = criterion(output, target, device)
+            val_loss += loss.item()
+            tbar.set_description('Val loss: %.3f' % (train_loss / (i + 1)))
+    return val_loss
 
 if __name__=="__main__":
     print("torch.cuda.is_available()   =", torch.cuda.is_available())
@@ -148,7 +169,7 @@ if __name__=="__main__":
 
     criterion = focal_loss
 
-    for epoch in epochs:
+    for epoch in range(epochs):
         train_loss = train(model, optimizer, criterion, device, train_dataloader)
         val_loss = validate(model, criterion, device, train_dataloader)
 
@@ -156,7 +177,6 @@ if __name__=="__main__":
             'model': model.state_dict(),
             'optimizer': optimizer.state_dict()
         }
-        current_time = time.time()
 
         model_save_str = '{}-{}-{}-{}.{}'.format(
             "deeplabv3", "resnet", "bn2d", epoch, "pth"
