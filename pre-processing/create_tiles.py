@@ -6,6 +6,7 @@ import sys
 import cv2
 from PIL import Image
 
+Image.MAX_IMAGE_PIXELS = None
 tile_size = 256
 stride = 128
 root_dir = '../data/pre-processed/dryvalleys/WV02'
@@ -27,6 +28,9 @@ for idx, [img, msk] in enumerate(zip(images, masks)):
     width = image.shape[1] - image.shape[1]%tile_size
     height = image.shape[0] - image.shape[0]%tile_size
 
+    cv2.imwrite(str(idx)+"_mask.png", mask)
+    cv2.imwrite(str(idx)+".png", image)
+
     for i in range(0, height, stride):
         if i+tile_size > height:
             break
@@ -44,8 +48,8 @@ for idx, [img, msk] in enumerate(zip(images, masks)):
 
             if np.sum(np.sum(mask_tile)) <= tile_size*tile_size:
                 continue
-                
+            """
             cv2.imwrite("{}/tiles/image/{}.png".format(root_dir, counter), img_tile)
             cv2.imwrite("{}/tiles/mask/{}.png".format(root_dir, counter), mask_tile)
-
+            """
             counter += 1

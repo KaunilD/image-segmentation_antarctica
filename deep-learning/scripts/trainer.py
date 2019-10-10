@@ -15,7 +15,7 @@ import torch.nn.init as init
 import torch.nn.functional as F
 from models import deeplab
 
-
+Image.MAX_IMAGE_PIXELS = None
 class GTiffDataset(torch_data.Dataset):
     def __init__(self,
                  root_dir, split, tile_size = 256, stride = 256, debug = False, transform=None):
@@ -52,7 +52,7 @@ class GTiffDataset(torch_data.Dataset):
                     j:j+self.tile_size
                 ]
 
-                if np.sum(np.sum(mask_tile)) <= self.tile_size*self.tile_size:
+                if np.sum(np.sum(np.sum(img_tile))) == 0:
                     continue
 
                 i_tiles.append(img_tile)
@@ -63,24 +63,27 @@ class GTiffDataset(torch_data.Dataset):
                     img_tile = np.moveaxis(img_tile, 0, -1)
                     cv2.imwrite("debug/" + str(i) + "_" + str(j) + "_img.png", img_tile)
                     cv2.imwrite("debug/" + str(i) + "_" + str(j) + "_mask.png", mask_tile)
+
         return i_tiles, m_tiles
 
     def read_dir(self):
         tiles = [[], []]
         images = sorted(glob.glob(self.root_dir + '/' + '*_3031.tif'))
         masks = sorted(glob.glob(self.root_dir + '/' + '*_3031_mask.tif'))
-        for idx, [i, m] in enumerate(zip(images, masks)):
-            print('Reading item # {} - {}/{}'.format(i, idx+1, len(images)))
+        for idx, [img, msk] in enumerate(zip(images, masks)):
+            print('Reading item # {} - {}/{}'.format(img, idx+1, len(images)))
             image = Image.open(img)
             mask = Image.open(msk)
             image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM))
-            #image = np.moveaxis(image, 0, -1)
+            image = np.moveaxis(image, 2, 0)
             mask = np.asarray(mask)
-
+            _, mask = cv2.threshold(mask, 127, 1, cv2.THRESH_BINARY)
+            print(image.shape)
             i_tiles, m_tiles = self.get_tiles(image, mask)
             for im, ma in zip(i_tiles, m_tiles):
                 tiles[0].append(im)
                 tiles[1].append(ma)
+            print(len(tiles[0]))
             del image
             del mask
         print()
@@ -151,8 +154,8 @@ if __name__=="__main__":
 
     epochs = 30
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/WV02', split='train', stride=128, debug=False)
-    val_gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/QB02', split='val', stride=128, debug=False)
+    gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/QB02', tile_size=256, split='train', stride=64, debug=False)
+    val_gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/WV02', tile_size=256, split='val', stride=64, debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)

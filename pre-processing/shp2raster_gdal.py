@@ -1,7 +1,6 @@
 import shapefile
 import numpy as np
 import glob
-import cv2
 import math
 from osgeo import gdal, ogr, osr
 import os
