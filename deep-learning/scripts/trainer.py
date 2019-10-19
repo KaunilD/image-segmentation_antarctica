@@ -51,7 +51,7 @@ class GTiffDataset(torch_data.Dataset):
                     i:i+self.tile_size,
                     j:j+self.tile_size
                 ]
-
+                print(mask_tile.shape)
                 if np.sum(np.sum(np.sum(img_tile))) == 0 or mask_tile.shape != [self.tile_size, self.tile_size]:
                     print("continue")
                     continue
