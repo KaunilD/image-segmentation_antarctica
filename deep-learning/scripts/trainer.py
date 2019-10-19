@@ -52,7 +52,8 @@ class GTiffDataset(torch_data.Dataset):
                     j:j+self.tile_size
                 ]
 
-                if np.sum(np.sum(np.sum(img_tile))) == 0:
+                if np.sum(np.sum(np.sum(img_tile))) == 0 or mask_tile.shape != [self.tile_size, self.tile_size]:
+                    print("continue")
                     continue
 
                 i_tiles.append(img_tile)
@@ -154,13 +155,13 @@ if __name__=="__main__":
 
     epochs = 30
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/QB02', tile_size=256, split='train', stride=64, debug=False)
-    val_gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/WV02', tile_size=256, split='val', stride=64, debug=False)
+    gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/WV02', tile_size=256, split='train', stride=64, debug=False)
+    val_gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/QB02', tile_size=256, split='val', stride=64, debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
 
-    model = deeplab.DeepLab(output_stride=16)
+    model = deeplab.DeepLab(output_stride=8)
     model.to(device)
     optimizer = torch.optim.SGD(
         lr=0.001,
