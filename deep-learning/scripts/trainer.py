@@ -87,6 +87,7 @@ class GTiffDataset(torch_data.Dataset):
             print(len(tiles[0]))
             del image
             del mask
+            break
         print()
         return tiles
 
@@ -154,21 +155,26 @@ if __name__=="__main__":
     print()
 
     epochs = 30
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/WV02', tile_size=256, split='train', stride=64, debug=False)
     val_gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/QB02', tile_size=256, split='val', stride=64, debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
 
+
     model = deeplab.DeepLab(output_stride=8)
+    if torch.cuda.device_count() > 1:
+      print("Using ", torch.cuda.device_count(), " GPUs!")
+      model = nn.DataParallel(model)
+
     model.to(device)
     optimizer = torch.optim.SGD(
         lr=0.001,
         momentum=0.9,
         weight_decay=5e-4,
         nesterov=False,
-        params=model.get_1x_lr_params()
+        params=model.module.get_1x_lr_params()
     )
 
     criterion = focal_loss
