@@ -51,9 +51,8 @@ class GTiffDataset(torch_data.Dataset):
                     i:i+self.tile_size,
                     j:j+self.tile_size
                 ]
-                print(np.prod(mask_tile.shape), self.tile_size*self.tile_size)
+
                 if np.sum(np.sum(np.sum(img_tile))) == 0 or np.prod(mask_tile.shape) != self.tile_size*self.tile_size:
-                    print("continue")
                     continue
 
                 i_tiles.append(img_tile)
@@ -87,7 +86,7 @@ class GTiffDataset(torch_data.Dataset):
             print(len(tiles[0]))
             del image
             del mask
-            break
+
         print()
         return tiles
 
