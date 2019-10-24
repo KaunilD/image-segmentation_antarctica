@@ -13,7 +13,7 @@ import torch.utils.data as torch_data
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
-from models import deeplab
+from models import deeplab, uresnet
 
 Image.MAX_IMAGE_PIXELS = None
 class GTiffDataset(torch_data.Dataset):
@@ -155,14 +155,14 @@ if __name__=="__main__":
 
     epochs = 30
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/WV02', tile_size=256, split='train', stride=64, debug=False)
-    val_gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/QB02', tile_size=256, split='val', stride=64, debug=False)
+    gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/WV02', tile_size=256, split='train', stride=256, debug=False)
+    val_gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/QB02', tile_size=256, split='val', stride=256, debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
 
 
-    model = deeplab.DeepLab(output_stride=8)
+    model = uresnet.UResNet()
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
