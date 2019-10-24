@@ -173,7 +173,7 @@ if __name__=="__main__":
         momentum=0.9,
         weight_decay=5e-4,
         nesterov=False,
-        params=model.module.get_1x_lr_params()
+        params=model.parameters()
     )
 
     criterion = focal_loss
