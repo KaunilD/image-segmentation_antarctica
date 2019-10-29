@@ -157,6 +157,7 @@ if __name__=="__main__":
     print("torch.cuda.current_device() =", torch.cuda.current_device())
     print()
 
+    model_save_pth = '../models'
     epochs = 30
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/WV02', tile_size=256, split='train', stride=256, debug=False)
@@ -191,8 +192,9 @@ if __name__=="__main__":
             'optimizer': optimizer.state_dict()
         }
 
-        model_save_str = '{}-{}-{}-{}.{}'.format(
-            model.__class__.__name__, "-", "bn2d", epoch, "pth"
+        model_save_str = '{}/{}-{}-{}-{}.{}'.format(
+            model_save_pth, model.__class__.__name__,
+            "-", "bn2d", epoch, "pth"
         )
 
         torch.save(
