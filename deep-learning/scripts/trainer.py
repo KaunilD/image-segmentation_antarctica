@@ -78,8 +78,7 @@ class GTiffDataset(torch_data.Dataset):
             image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM))
 
             cv2.normalize(image, image, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            image = np.moveaxis(image, 2, 0)
-            
+
             mask = np.asarray(mask)
             cv2.normalize(mask, mask, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
@@ -100,7 +99,7 @@ class GTiffDataset(torch_data.Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        sample = [self.images[idx], self.masks[idx]]
+        sample = [self.transform(self.images[idx]), self.masks[idx]]
         return sample
 
 def focal_loss(output, target, device, gamma=2, alpha=0.5):
@@ -160,8 +159,21 @@ if __name__=="__main__":
     model_save_pth = '../models'
     epochs = 30
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/WV02', tile_size=256, split='train', stride=256, debug=False)
-    val_gtiffdataset = GTiffDataset('../../data/pre-processed/dryvalleys/QB02', tile_size=256, split='val', stride=256, debug=False)
+    gtiffdataset = GTiffDataset(
+        '../../data/pre-processed/dryvalleys/WV02',
+        tile_size=256, split='train', stride=256, debug=False,
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+        ])
+    )
+    val_gtiffdataset = GTiffDataset(
+        '../../data/pre-processed/dryvalleys/QB02',
+        tile_size=256, split='val', stride=256, debug=False,
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+        ])
+
+    )
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
