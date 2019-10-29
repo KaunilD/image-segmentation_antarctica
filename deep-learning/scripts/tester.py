@@ -13,7 +13,7 @@ import torch.utils.data as torch_data
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
-from models import deeplab
+from models import deeplab, uresnet
 import matplotlib.pyplot as plt
 
 
@@ -62,6 +62,7 @@ class GTiffDataset(torch_data.Dataset):
     def read_dir(self):
         tiles = []
         images = sorted(glob.glob(self.root_dir + '/' + '*_3031.tif'))
+
         for idx, img in enumerate(images):
             print('Reading item # {} - {}/{}'.format(img, idx+1, len(images)))
             image = Image.open(img)
@@ -87,7 +88,6 @@ class GTiffDataset(torch_data.Dataset):
         return sample
 
 def test(model, device, dataloader):
-    model.eval()
     val_loss = 0.0
     tbar = tqdm(dataloader)
     num_samples = len(dataloader)
@@ -96,27 +96,39 @@ def test(model, device, dataloader):
         for i, sample in enumerate(tbar):
             image = sample.float()
             image = image.to(device)
-            outputs.append(model(image))
+            out = model(image)
+            for jdx, j in enumerate(out):
+                outputs.append(j.cpu().numpy())
             tbar.set_description('{}%'.format(int((i/num_samples)*100)))
 
     return outputs
 
 if __name__=="__main__":
+    print("torch.cuda.is_available()   =", torch.cuda.is_available())
+    print("torch.cuda.device_count()   =", torch.cuda.device_count())
+    print("torch.cuda.device('cuda')   =", torch.cuda.device('cuda'))
+    print("torch.cuda.current_device() =", torch.cuda.current_device())
+    print()
+
     root_dir = '../../data/pre-processed/dryvalleys/WV02'
     stride = 256
     tile_size = 256
 
-    device = torch.device("cuda")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = deeplab.DeepLab(output_stride=16)
-    model.load_state_dict(torch.load("../../models/deeplabv3-resnet-bn2d-1.pth")["model"])
+    model = torch.nn.DataParallel(uresnet.UResNet())
+    model.load_state_dict(torch.load("../../models/deeplabv3-resnet-bn2d-3.pth")["model"])
     model.to(device)
+    model.eval()
 
-    gtiffdataset = GTiffDataset(root_dir, split='test', stride=256, debug=False)
-    test_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=1)
-    outputs = test(model, device, test_dataloader)
 
     images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))
+    print(images)
+
+    gtiffdataset = GTiffDataset(root_dir, split='test', stride=256, debug=False)
+    test_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=8)
+    outputs = test(model, device, test_dataloader)
+
 
     for idx, img in enumerate(images):
         counter = 0
@@ -125,7 +137,7 @@ if __name__=="__main__":
         image = np.asarray(image)
         shape = image.shape
 
-        mask = np.zeros((shape[0], shape[1]))
+        mask = np.zeros((shape[0], shape[1], 3))
 
         width = mask.shape[1] - mask.shape[1]%tile_size
         height = mask.shape[0] - mask.shape[0]%tile_size
@@ -145,14 +157,13 @@ if __name__=="__main__":
                 if np.sum(np.sum(np.sum(img_tile))) == 0:
                     continue
 
-                output = outputs[counter].cpu().numpy()
-                mask_tile = output[0][1]>output[0][0]
-
-                mask_tile = np.reshape(mask_tile, (256, 256))
+                output = outputs[counter]
+                output = np.moveaxis(output, 0, -1)
 
                 mask[
                     i:i+tile_size,
-                    j:j+tile_size
-                ] = np.copy(mask_tile)
+                    j:j+tile_size,
+                    :2
+                ] = np.copy(output)
 
         plt.imsave(str(idx)+".png", mask)

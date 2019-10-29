@@ -72,13 +72,17 @@ class GTiffDataset(torch_data.Dataset):
         masks = sorted(glob.glob(self.root_dir + '/' + '*_3031_mask.tif'))
         for idx, [img, msk] in enumerate(zip(images, masks)):
             print('Reading item # {} - {}/{}'.format(img, idx+1, len(images)))
+
             image = Image.open(img)
             mask = Image.open(msk)
             image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM))
+
             image = np.moveaxis(image, 2, 0)
+            cv2.normalize(image, image, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
             mask = np.asarray(mask)
-            _, mask = cv2.threshold(mask, 127, 1, cv2.THRESH_BINARY)
-            print(image.shape)
+            cv2.normalize(mask, mask, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
             i_tiles, m_tiles = self.get_tiles(image, mask)
             for im, ma in zip(i_tiles, m_tiles):
                 tiles[0].append(im)
@@ -188,11 +192,12 @@ if __name__=="__main__":
         }
 
         model_save_str = '{}-{}-{}-{}.{}'.format(
-            "deeplabv3", "resnet", "bn2d", epoch, "pth"
+            model.__class__.__name__, "-", "bn2d", epoch, "pth"
         )
 
         torch.save(
             state,
             model_save_str
         )
+
         print(epoch, train_loss, val_loss)
