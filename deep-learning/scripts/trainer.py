@@ -77,9 +77,9 @@ class GTiffDataset(torch_data.Dataset):
             mask = Image.open(msk)
             image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM))
 
-            image = np.moveaxis(image, 2, 0)
             cv2.normalize(image, image, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-
+            image = np.moveaxis(image, 2, 0)
+            
             mask = np.asarray(mask)
             cv2.normalize(mask, mask, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
