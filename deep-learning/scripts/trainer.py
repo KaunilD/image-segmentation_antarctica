@@ -69,7 +69,7 @@ class GTiffDataset(torch_data.Dataset):
     def read_dir(self):
         tiles = [[], []]
         for idx, [img, msk] in enumerate(zip(self.root_dir[0], self.root_dir[1])):
-            print('Reading item # {} - {}/{}'.format(img, idx+1, len(images)))
+            print('Reading item # {} - {}/{}'.format(img, idx+1, len(self.root_dir[0])))
 
             image = Image.open(img)
             mask = Image.open(msk)
