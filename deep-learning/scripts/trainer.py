@@ -165,11 +165,11 @@ if __name__=="__main__":
 
     gtiffdataset = GTiffDataset(
         [images_list[:100], masks_list[:100]],
-        tile_size=256, split='train', stride=128, debug=False)
+        tile_size=256, split='train', stride=256, debug=False)
 
     val_gtiffdataset = GTiffDataset(
         [images_list[100:], masks_list[100:]],
-        tile_size=256, split='val', stride=128, debug=False)
+        tile_size=256, split='val', stride=256, debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
