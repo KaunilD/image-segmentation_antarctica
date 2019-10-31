@@ -159,8 +159,8 @@ if __name__=="__main__":
     epochs = 30
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    images_list = sorted(glob.glob(self.root_dir + '/' + '*_3031.tif'))
-    masks_list = sorted(glob.glob(self.root_dir + '/' + '*_3031_mask.tif'))
+    images_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV02/' + '*_3031.tif'))
+    masks_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV02/' + '*_3031_mask.tif'))
 
 
     gtiffdataset = GTiffDataset(
