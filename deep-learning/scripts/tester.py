@@ -67,9 +67,12 @@ class GTiffDataset(torch_data.Dataset):
             print('Reading item # {} - {}/{}'.format(img, idx+1, len(images)))
             image = Image.open(img)
             image = np.asarray(image)
-            image = np.moveaxis(image, 2, 0)
-            print(image.shape)
+
+            cv2.normalize(image, image, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+            image = np.moveaxis(image, 2 ,0)
+
             i_tiles = self.get_tiles(image)
+
             for im in i_tiles:
                 tiles.append(im)
             print(len(tiles))
@@ -116,7 +119,7 @@ if __name__=="__main__":
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = torch.nn.DataParallel(uresnet.UResNet())
+    model = deeplab.DeepLab(output_stride=16)
     model.load_state_dict(torch.load("../../models/deeplabv3-resnet-bn2d-3.pth")["model"])
     model.to(device)
     model.eval()
@@ -166,4 +169,4 @@ if __name__=="__main__":
                     :2
                 ] = np.copy(output)
 
-        plt.imsave(str(idx)+".png", mask)
+        plt.imsave(str(idx)+"_deeplab.png", mask)

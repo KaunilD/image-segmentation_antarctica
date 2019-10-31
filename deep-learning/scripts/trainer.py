@@ -65,12 +65,10 @@ class GTiffDataset(torch_data.Dataset):
                     cv2.imwrite("debug/" + str(i) + "_" + str(j) + "_mask.png", mask_tile)
 
         return i_tiles, m_tiles
-
+        # Calcium@20
     def read_dir(self):
         tiles = [[], []]
-        images = sorted(glob.glob(self.root_dir + '/' + '*_3031.tif'))
-        masks = sorted(glob.glob(self.root_dir + '/' + '*_3031_mask.tif'))
-        for idx, [img, msk] in enumerate(zip(images, masks)):
+        for idx, [img, msk] in enumerate(zip(self.root_dir[0], self.root_dir[1])):
             print('Reading item # {} - {}/{}'.format(img, idx+1, len(images)))
 
             image = Image.open(img)
@@ -78,10 +76,10 @@ class GTiffDataset(torch_data.Dataset):
             image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM))
 
             cv2.normalize(image, image, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            image = np.moveaxis(image, 2, 0)
+            image = np.moveaxis(image, 2 ,0)
 
             mask = np.asarray(mask)
-            cv2.normalize(mask, mask, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+            _, mask = cv2.threshold(mask, 127, 1, cv2.THRESH_BINARY)
 
             i_tiles, m_tiles = self.get_tiles(image, mask)
             for im, ma in zip(i_tiles, m_tiles):
@@ -100,7 +98,7 @@ class GTiffDataset(torch_data.Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        sample = [self.transform(self.images[idx]), self.masks[idx]]
+        sample = [self.images[idx], self.masks[idx]]
         return sample
 
 def focal_loss(output, target, device, gamma=2, alpha=0.5):
@@ -159,28 +157,26 @@ if __name__=="__main__":
 
     model_save_pth = '../models'
     epochs = 30
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    gtiffdataset = GTiffDataset(
-        '../../data/pre-processed/dryvalleys/WV02',
-        tile_size=256, split='train', stride=256, debug=False,
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-        ])
-    )
-    val_gtiffdataset = GTiffDataset(
-        '../../data/pre-processed/dryvalleys/QB02',
-        tile_size=256, split='val', stride=256, debug=False,
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-        ])
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    )
+    images_list = sorted(glob.glob(self.root_dir + '/' + '*_3031.tif'))
+    masks_list = sorted(glob.glob(self.root_dir + '/' + '*_3031_mask.tif'))
+
+
+    gtiffdataset = GTiffDataset(
+        [images_list[:100], masks_list[:100]],
+        tile_size=256, split='train', stride=128, debug=False)
+
+    val_gtiffdataset = GTiffDataset(
+        [images_list[100:], masks_list[100:]],
+        tile_size=256, split='val', stride=128, debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
 
 
     model = uresnet.UResNet()
+
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
@@ -206,7 +202,7 @@ if __name__=="__main__":
         }
 
         model_save_str = '{}/{}-{}-{}-{}.{}'.format(
-            model_save_pth, model.__class__.__name__,
+            model_save_pth, model.module.name,
             "-", "bn2d", epoch, "pth"
         )
 

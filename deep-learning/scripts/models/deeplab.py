@@ -9,6 +9,7 @@ class DeepLab(nn.Module):
     def __init__(self, backbone='resnet', output_stride=16, num_classes=2,
                  sync_bn=True, freeze_bn=False, pretrained=False):
         super(DeepLab, self).__init__()
+        self.name = "deeplab"
 
         self.backbone = resnet.ResNet(
             resnet.Bottleneck,

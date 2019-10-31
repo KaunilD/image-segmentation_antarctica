@@ -114,7 +114,8 @@ class UResNet(nn.Module):
     def __init__(self, num_classes=2, input_channels=3, inplanes=64, showsizes=False):
         self.inplanes =inplanes
         super(UResNet, self).__init__()
-
+        self.name = "uresnet"
+        
         self._showsizes = showsizes # print size at each layer
 
         # Encoder
