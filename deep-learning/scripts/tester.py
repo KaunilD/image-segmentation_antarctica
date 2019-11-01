@@ -61,7 +61,7 @@ class GTiffDataset(torch_data.Dataset):
 
     def read_dir(self):
         tiles = []
-        images = sorted(glob.glob(self.root_dir + '/' + '*_3031.tif'))
+        images = sorted(glob.glob(self.root_dir + '/' + '*_3031.tif'))[100:]
 
         for idx, img in enumerate(images):
             print('Reading item # {} - {}/{}'.format(img, idx+1, len(images)))
