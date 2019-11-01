@@ -119,13 +119,16 @@ if __name__=="__main__":
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = deeplab.DeepLab(output_stride=16)
-    model.load_state_dict(torch.load("../../models/deeplabv3-resnet-bn2d-3.pth")["model"])
+    model = uresnet.UResNet()
+    model = nn.DataParallel(model)
+
+    model.load_state_dict(torch.load("../../models/uresnet---bn2d-0.pth")["model"])
     model.to(device)
     model.eval()
 
 
-    images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))
+
+    images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))[100:]
     print(images)
 
     gtiffdataset = GTiffDataset(root_dir, split='test', stride=256, debug=False)
@@ -169,4 +172,4 @@ if __name__=="__main__":
                     :2
                 ] = np.copy(output)
 
-        plt.imsave(str(idx)+"_deeplab.png", mask)
+        plt.imsave(str(idx)+"_{}_"+model.module.name+"_.png", mask)
