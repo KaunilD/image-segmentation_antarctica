@@ -118,19 +118,17 @@ if __name__=="__main__":
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = uresnet.UResNet()
+    model = deeplab.DeepLab(output_stride=16)
     model = nn.DataParallel(model)
 
-    model.load_state_dict(torch.load("../../models/uresnet---bn2d-0.pth")["model"])
+    model.load_state_dict(torch.load("../../models/deeplab---bn2d-0.pth")["model"])
     model.to(device)
     model.eval()
 
-
-
-    images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))[100:]
+    images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))
     print(images)
 
-    gtiffdataset = GTiffDataset(root_dir, split='test', stride=256, debug=False)
+    gtiffdataset = GTiffDataset(images, split='test', stride=256, debug=False)
     test_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=8)
     outputs = test(model, device, test_dataloader)
 
@@ -142,7 +140,7 @@ if __name__=="__main__":
         image = np.asarray(image)
         shape = image.shape
 
-        mask = np.zeros((shape[0], shape[1], 3))
+        mask = np.zeros((shape[0], shape[1], 3), dtype=np.float32)
 
         width = mask.shape[1] - mask.shape[1]%tile_size
         height = mask.shape[0] - mask.shape[0]%tile_size
@@ -170,5 +168,5 @@ if __name__=="__main__":
                     j:j+tile_size,
                     :2
                 ] = np.copy(output)
-
-        plt.imsave(str(idx)+"_{}_"+model.module.name+"_.png", mask)
+                
+        plt.imsave("1_{}_"+model.module.name+"_.png", mask)
