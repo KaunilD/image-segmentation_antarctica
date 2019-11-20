@@ -94,11 +94,13 @@ def test(model, device, dataloader):
     tbar = tqdm(dataloader)
     num_samples = len(dataloader)
     outputs = []
+    softmax = nn.Softmax(dim=1)
     with torch.no_grad():
         for i, sample in enumerate(tbar):
             image = sample.float()
             image = image.to(device)
             out = model(image)
+            out = softmax(out)
             for jdx, j in enumerate(out):
                 outputs.append(j.cpu().numpy())
             tbar.set_description('{}%'.format(int((i/num_samples)*100)))
@@ -106,26 +108,27 @@ def test(model, device, dataloader):
     return outputs
 
 if __name__=="__main__":
+    """
     print("torch.cuda.is_available()   =", torch.cuda.is_available())
     print("torch.cuda.device_count()   =", torch.cuda.device_count())
     print("torch.cuda.device('cuda')   =", torch.cuda.device('cuda'))
     print("torch.cuda.current_device() =", torch.cuda.current_device())
     print()
-
+    """
     root_dir = '../../data/pre-processed/dryvalleys/WV02'
     stride = 256
     tile_size = 256
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
 
-    model = deeplab.DeepLab(output_stride=16)
+    model = deeplab.DeepLab()
     model = nn.DataParallel(model)
 
-    model.load_state_dict(torch.load("../../models/deeplab---bn2d-0.pth")["model"])
+    model.load_state_dict(torch.load("../../models/deeplab---bn2d-29.pth", map_location="cpu")["model"])
     model.to(device)
     model.eval()
 
-    images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))
+    images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))[0:1]
     print(images)
 
     gtiffdataset = GTiffDataset(images, split='test', stride=256, debug=False)
@@ -168,5 +171,8 @@ if __name__=="__main__":
                     j:j+tile_size,
                     :2
                 ] = np.copy(output)
-                
-        plt.imsave("1_{}_"+model.module.name+"_.png", mask)
+        mask = mask[:, :, 1] > mask[:, :, 0]
+
+        plt.imsave(
+            "{}_{}.png".format( os.path.basename(img).split(".")[0] , model.module.name ),
+            mask)

@@ -149,6 +149,7 @@ def validate(model, criterion, device, dataloader):
     return val_loss
 
 if __name__=="__main__":
+
     print("torch.cuda.is_available()   =", torch.cuda.is_available())
     print("torch.cuda.device_count()   =", torch.cuda.device_count())
     print("torch.cuda.device('cuda')   =", torch.cuda.device('cuda'))
@@ -182,16 +183,13 @@ if __name__=="__main__":
       model = nn.DataParallel(model)
 
     model.to(device)
-    optimizer = torch.optim.SGD(
-        lr=0.001,
-        momentum=0.9,
-        weight_decay=5e-4,
-        nesterov=False,
-        params=model.parameters()
+
+    optimizer = torch.optim.Adam(lr=0.005, weight_decay=1e-3,
+        params=filter(lambda p: p.requires_grad, model.parameters())
     )
 
     criterion = focal_loss
-
+    train_log = []
     for epoch in range(epochs):
         train_loss = train(model, optimizer, criterion, device, train_dataloader)
         val_loss = validate(model, criterion, device, train_dataloader)
@@ -210,5 +208,6 @@ if __name__=="__main__":
             state,
             model_save_str
         )
-
+        train_log.append([train_loss, val_loss])
+        np.save("train_log_{}".format(model.module.name), train_log)
         print(epoch, train_loss, val_loss)

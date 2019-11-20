@@ -20,7 +20,7 @@ class DeepLab(nn.Module):
         )
         self.aspp = aspp.ASPP(self.backbone, output_stride, nn.BatchNorm2d)
         self.decoder = decoder.Decoder(num_classes, 'resnet', nn.BatchNorm2d)
-        self.softmax = nn.Softmax(dim=1) # should return [b,c=3,h,w], normalized over, c dimension
+        #self.softmax = nn.Softmax(dim=1) # should return [b,c=3,h,w], normalized over, c dimension
 
         if freeze_bn:
             self.freeze_bn()
@@ -30,8 +30,8 @@ class DeepLab(nn.Module):
         x = self.aspp(x)
         x = self.decoder(x, low_level_feat)
         x = F.interpolate(x, size=input.size()[2:], mode='bilinear', align_corners=True)
-
-        return self.softmax(x)
+        return x
+        #return self.softmax(x)
 
     def freeze_bn(self):
         for m in self.modules():
