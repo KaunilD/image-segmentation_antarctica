@@ -188,11 +188,19 @@ if __name__=="__main__":
         params=filter(lambda p: p.requires_grad, model.parameters())
     )
 
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, factor=0.5, verbose=True
+    )
+
+
     criterion = focal_loss
     train_log = []
     for epoch in range(epochs):
         train_loss = train(model, optimizer, criterion, device, train_dataloader)
         val_loss = validate(model, criterion, device, train_dataloader)
+
+        scheduler.step(val_loss)
 
         state = {
             'model': model.state_dict(),

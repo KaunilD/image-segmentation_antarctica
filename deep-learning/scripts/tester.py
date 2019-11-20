@@ -119,12 +119,13 @@ if __name__=="__main__":
     stride = 256
     tile_size = 256
 
-    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = deeplab.DeepLab()
+    #model = deeplab.DeepLab()
+    model = uresnet.UResNet()
     model = nn.DataParallel(model)
 
-    model.load_state_dict(torch.load("../../models/deeplab---bn2d-29.pth", map_location="cpu")["model"])
+    model.load_state_dict(torch.load("../../models/uresnet---bn2d-29.pth")["model"])
     model.to(device)
     model.eval()
 
