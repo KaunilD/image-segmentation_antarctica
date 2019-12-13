@@ -139,3 +139,5 @@ data/gettiffs/dryvalleys/WV02_20100114145434_1030010003065200_10JAN14145434-M1BS
 models/deeplabv3-resnet-bn2d-1.pth
 *.pth
 *.png
+*.png
+*.zip
