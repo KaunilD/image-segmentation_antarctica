@@ -20,7 +20,7 @@ class UEnc(nn.Module):
     def __init__(self, squeeze, ch_mul=64, in_chans=3):
         super(UEnc, self).__init__()
 
-        self.enc1=Block(in_chans, ch_mul, seperable=False)
+        self.enc1=Block(in_chans, ch_mul)
         self.enc2=Block(ch_mul, 2*ch_mul)
         self.enc3=Block(2*ch_mul, 4*ch_mul)
         self.enc4=Block(4*ch_mul, 8*ch_mul)
@@ -37,7 +37,7 @@ class UEnc(nn.Module):
         self.dec3=Block(4*ch_mul, 2*ch_mul)
 
         self.up4=nn.ConvTranspose2d(2*ch_mul, ch_mul, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.dec4=Block(2*ch_mul, ch_mul, seperable=False)
+        self.dec4=Block(2*ch_mul, ch_mul)
 
         self.final=nn.Conv2d(ch_mul, squeeze, kernel_size=(1, 1))
 
@@ -74,7 +74,7 @@ class UDec(nn.Module):
     def __init__(self, squeeze, ch_mul=64, in_chans=3):
         super(UDec, self).__init__()
 
-        self.enc1=Block(squeeze, ch_mul, seperable=False)
+        self.enc1=Block(squeeze, ch_mul)
         self.enc2=Block(ch_mul, 2*ch_mul)
         self.enc3=Block(2*ch_mul, 4*ch_mul)
         self.enc4=Block(4*ch_mul, 8*ch_mul)
@@ -91,7 +91,7 @@ class UDec(nn.Module):
         self.dec3=Block(4*ch_mul, 2*ch_mul)
 
         self.up4=nn.ConvTranspose2d(2*ch_mul, ch_mul, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.dec4=Block(2*ch_mul, ch_mul, seperable=False)
+        self.dec4=Block(2*ch_mul, ch_mul)
 
         self.final=nn.Conv2d(ch_mul, in_chans, kernel_size=(1, 1))
 
@@ -124,10 +124,11 @@ class UDec(nn.Module):
         return final
 
 class WNet(nn.Module):
-    def __init__(self, squeeze, ch_mul=64, in_chans=3, out_chans=2):
+    def __init__(self, squeeze, ch_mul=64, in_chans=3, out_chans=3):
         super(WNet, self).__init__()
         if out_chans==1000:
             out_chans=in_chans
+        self.name = "WNet"
         self.UEnc=UEnc(squeeze, ch_mul, in_chans)
         self.UDec=UDec(squeeze, ch_mul, out_chans)
 

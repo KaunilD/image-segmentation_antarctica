@@ -102,6 +102,31 @@ class GTiffDataset(torch_data.Dataset):
         return sample
 
 
+vertical_sobel = torch.nn.Parameter(
+    torch.from_numpy(
+        np.array([[[[1,  0,  -1],
+                    [1,  0,  -1],
+                    [1,  0,  -1]]]]
+        )
+    ).float().cuda(), requires_grad=False)
+
+horizontal_sobel = torch.nn.Parameter(
+    torch.from_numpy(
+        np.array([[[[1,   1,  1],
+                    [0,   0,  0],
+                    [-1 ,-1, -1]]]]
+        )
+        ).float().cuda(), requires_grad=False)
+
+def gradient_regularization(softmax, device='cuda'):
+    vert=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[1])], 1)
+    hori=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[1])], 1)
+
+    mag=torch.pow(torch.pow(vert, 2)+torch.pow(hori, 2), 0.5)
+    mean=torch.mean(mag)
+    return mean
+
+
 def train_op(model, optimizer, input, psi=0.5):
     enc = model(input, returns='enc')
     n_cut_loss=gradient_regularization(enc)*psi
@@ -115,7 +140,7 @@ def train_op(model, optimizer, input, psi=0.5):
     optimizer.zero_grad()
     return model
 
-def train(model, optimizer, criterion, device, dataloader, psi=0.5):
+def train(model, optimizer, device, dataloader, psi=0.5):
     model.train()
     train_loss = 0.0
     tbar = tqdm(dataloader)
@@ -140,7 +165,7 @@ def train(model, optimizer, criterion, device, dataloader, psi=0.5):
         tbar.set_description('Train loss: %.3f' % (train_loss / (i + 1)))
     return train_loss
 
-def validate(model, criterion, device, dataloader, psi=0.5):
+def validate(model, device, dataloader, psi=0.5):
     model.eval()
     val_loss = 0.0
     tbar = tqdm(dataloader)
@@ -174,18 +199,18 @@ if __name__=="__main__":
 
 
     gtiffdataset = GTiffDataset(
-        [images_list[:100], masks_list[:100]],
+        [images_list[:1], masks_list[:1]],
         tile_size=256, split='train', stride=256, debug=False)
 
     val_gtiffdataset = GTiffDataset(
-        [images_list[100:], masks_list[100:]],
+        [images_list[1:2], masks_list[1:2]],
         tile_size=256, split='val', stride=256, debug=False)
 
-    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
-    val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
+    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=16)
+    val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=16)
 
 
-    model = wnet.WNet(4)
+    model = wnet.WNet(2)
 
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
@@ -203,11 +228,10 @@ if __name__=="__main__":
     )
 
 
-    criterion = focal_loss
     train_log = []
     for epoch in range(epochs):
-        train_loss = train(model, optimizer, criterion, device, train_dataloader)
-        val_loss = validate(model, criterion, device, train_dataloader)
+        train_loss = train(model, optimizer, device, train_dataloader)
+        val_loss = validate(model, device, train_dataloader)
 
         scheduler.step(val_loss)
 
