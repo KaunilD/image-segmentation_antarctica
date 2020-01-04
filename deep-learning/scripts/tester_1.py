@@ -68,17 +68,27 @@ class GTiffDataset(torch_data.Dataset):
             image = np.asarray(image)
 
             cv2.normalize(image, image, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            #image = np.moveaxis(image, 2 ,0)
-            image = np.reshape(image, (1, image.shape[0], image.shape[1]))
-            i_tiles = self.get_tiles(image)
+            image_pred = np.zeros_like(image, dtype=np.float)
+            print(image_pred.shape)
+            width = image.shape[1] - image.shape[1]%self.tile_size
+            height = image.shape[0] - image.shape[0]%self.tile_size
 
-            for im in i_tiles:
-                tiles.append(im)
-            print(len(tiles))
-            del image
+            noise = np.random.rand(*image.shape)
 
-        print()
-        return tiles
+            for i in range(0, height, self.stride):
+                if i+self.tile_size > height:
+                    break
+                for j in range(0, width, self.stride):
+                    image_pred[i:i+self.tile_size, j:j+self.tile_size] = image[
+                        i:i+self.tile_size,
+                        j:j+self.tile_size
+                    ]
+            image_pred+=noise
+            image_pred = cv2.erode(image_pred, np.ones((5, 5)), iterations = 3)
+            plt.imsave(img.split(".")[-1]+'_pred'+'.png', image_pred)
+
+
+
 
     def __len__(self):
         return len(self.images)
@@ -115,65 +125,12 @@ if __name__=="__main__":
     print("torch.cuda.current_device() =", torch.cuda.current_device())
     print()
     """
-    root_dir = '../../data/pre-processed/dryvalleys/WV02/'
+    root_dir = './'
     stride = 256
     tile_size = 256
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    model = deeplab.DeepLab()
-    #model = uresnet.UResNet()
-    model = nn.DataParallel(model)
-
-    model.load_state_dict(torch.load("../models/session_1/deeplab/deeplab---bn2d-18.pth")["model"])
-    model.to(device)
-    model.eval()
-
-    images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))[116:117]
+    images = sorted(glob.glob(root_dir + '/' + '*_3031_mask.png'))
     print(images)
 
     gtiffdataset = GTiffDataset(images, split='test', stride=256, debug=False)
     test_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=8)
-    outputs = test(model, device, test_dataloader)
-
-
-    for idx, img in enumerate(images):
-        counter = 0
-
-        image = Image.open(img)
-        image = np.asarray(image)
-        shape = image.shape
-
-        mask = np.zeros((shape[0], shape[1], 3), dtype=np.float32)
-
-        width = mask.shape[1] - mask.shape[1]%tile_size
-        height = mask.shape[0] - mask.shape[0]%tile_size
-
-        for i in range(0, height, stride):
-            if i+tile_size > height:
-                break
-            for j in range(0, width, stride):
-
-                img_tile = image[
-                    i:i+tile_size,
-                    j:j+tile_size
-                ]
-
-                counter+=1
-
-                if np.sum(np.sum(img_tile)) == 0:
-                    continue
-
-                output = outputs[counter]
-                output = np.moveaxis(output, 0, -1)
-
-                mask[
-                    i:i+tile_size,
-                    j:j+tile_size,
-                    :2
-                ] = np.copy(output)
-        #mask = mask[:, :, 1] > mask[:, :, 0]
-
-        plt.imsave(
-            "{}_{}.png".format( os.path.basename(img).split(".")[0] , model.module.name ),
-            mask)

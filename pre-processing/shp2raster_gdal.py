@@ -5,7 +5,7 @@ import math
 from osgeo import gdal, ogr, osr
 import os
 
-os.environ["GDAL_DATA"] = 'C:\\Users\\dhruv\\.conda\\envs\\geology\\Library\\share\\gdal'
+#os.environ["GDAL_DATA"] = 'C:\\Users\\dhruv\\.conda\\envs\\geology\\Library\\share\\gdal'
 
 OUT_SUFFIX = '../data/pre-processed/dryvalleys/WV02'
 GEOTIF_PATH = '../data/gettiffs/dryvalleys/*.tif'
@@ -109,39 +109,13 @@ if __name__ == "__main__":
         tif_ds = gdal.Open(
             image_id2image[image_id].get_path()
         )
-        """
-        tif_ds = gdal.Warp(
-            "{}/{}_4326.tif".format(OUT_SUFFIX, image_id),
-            image_id2image[image_id].get_path(),
-            options=gdal.WarpOptions(
-                dstSRS='EPSG:4326',
-                errorThreshold=0.001
-            )
-        )
-
-        w = tif_ds.RasterXSize
-        h = tif_ds.RasterYSize
-
-        gt = tif_ds.GetGeoTransform()
-        ext_ = get_extent(gt, w, h)
-
-        tif_srs = osr.SpatialReference()
-        tif_srs.ImportFromWkt(tif_ds.GetProjection())
-
-        ext = reproject_coords(ext_, shp_master_srs, tif_srs)
-
-        print(ext)
-        print()
-        """
 
         tif_ds = gdal.Translate(
             "{}/{}_3031.tif".format(OUT_SUFFIX, image_id), image_id2image[image_id].get_path(),
             format='GTiff', outputType=gdal.GDT_Byte,
-            bandList=[4, 3, 2],
+            bandList=[1],
             scaleParams=[
-                [tif_ds.GetRasterBand(4).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(4).GetStatistics(0, 1)[1]],
-                [tif_ds.GetRasterBand(3).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(3).GetStatistics(0, 1)[1]],
-                [tif_ds.GetRasterBand(2).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(2).GetStatistics(0, 1)[1]],
+                [tif_ds.GetRasterBand(1).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(1).GetStatistics(0, 1)[1]],
             ],
         )
 

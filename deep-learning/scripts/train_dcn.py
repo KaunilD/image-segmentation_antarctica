@@ -25,6 +25,7 @@ import glob
 import cv2
 from models import uresnet
 from models.vgg16 import vgg16
+from models.segnet import SegNet
 # Calcium@20
 args = {
     "verbose": True,
@@ -165,21 +166,22 @@ def compute_features(device, dataloader, model, N):
         print('Compute features')
     end = time.time()
     model.eval()
-    # discard the label information in the dataloader
     for i, input_tensor in enumerate(dataloader):
         input_var = input_tensor.float()
         input_var = input_var.to(device)
-        aux = model(input_var).data.cpu().numpy()
+        flattened_input = input_var.view(input_var.size(0), -1)
+        flattened_input = flattened_input.data.cpu().numpy()
 
         if i == 0:
-            features = np.zeros((N, aux.shape[1]), dtype='float32')
+            features = np.zeros((N, flattened_input.shape[1]), dtype='float32')
 
-        aux = aux.astype('float32')
+        flattened_input = flattened_input.astype('float32')
         if i < len(dataloader) - 1:
-            features[i * args["batch"]: (i + 1) * args["batch"]] = aux
+            features[i * args["batch"]: (i + 1) * args["batch"]] = flattened_input
         else:
             # special treatment for final batch
-            features[i * args["batch"]:] = aux
+            features[i * args["batch"]:] = flattened_input
+
 
         # measure elapsed time
         end = time.time()
@@ -204,17 +206,11 @@ def train(device, loader, model, crit, opt, epoch):
     # switch to train mode
     model.train()
     losses = []
-    # create an optimizer for the last fc layer
-    optimizer_tl = torch.optim.SGD(
-        model.top_layer.parameters(),
-        lr=args["lr"],
-        weight_decay=10**args["wd"],
-    )
-
 
     end = time.time()
     for i, (input_tensor, target) in enumerate(loader):
-        # save checkpoint
+        print(input_tensor.size(), target.size())
+
         n = len(loader) * epoch + i
 
         input_var = input_tensor.float()
@@ -251,9 +247,7 @@ def main():
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = vgg16()
-    fd = int(model.top_layer.weight.size()[1])
-    model.top_layer = None
+    model = SegNet(input_channels=3, output_channels=1)
     model.to(device)
 
     optimizer = torch.optim.Adam(lr=0.005, weight_decay=1e-3,
@@ -266,19 +260,26 @@ def main():
     images_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV02/' + '*_3031.tif'))
     # 115469.125 75.99947928705643
     gtiffdataset = GTiffDataset(
-        images_list[:100],
+        images_list[:1],
         tile_size=256, split='train', stride=256, debug=False)
 
     dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=16)
 
     deepcluster = clustering.Kmeans(2)
 
+    # get the features for the whole dataset
+    # basically, flattening the images.
+    features = compute_features(device, dataloader, model, len(gtiffdataset))
+
+
+    if args["verbose"]:
+        print('Cluster the features')
+    clustering_loss = deepcluster.cluster(features, verbose=args["verbose"])
+    
+
 
     for epoch in range(0, 30):
         end = time.time()
-
-        model.top_layer = None
-        model.classifier = nn.Sequential(*list(model.classifier.children())[:-1])
         # get the features for the whole dataset
         features = compute_features(device, dataloader, model, len(gtiffdataset))
 
@@ -302,15 +303,6 @@ def main():
             sampler=sampler,
             pin_memory=True,
         )
-
-        # set last fully connected layer
-        mlp = list(model.classifier.children())
-        mlp.append(nn.ReLU(inplace=True).to(device))
-        model.classifier = nn.Sequential(*mlp)
-        model.top_layer = nn.Linear(fd, len(deepcluster.images_lists))
-        model.top_layer.weight.data.normal_(0, 0.01)
-        model.top_layer.bias.data.zero_()
-        model.top_layer.to(device)
 
         end = time.time()
         loss = train(device, train_dataloader, model, criterion, optimizer, epoch)

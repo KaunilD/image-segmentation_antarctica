@@ -141,3 +141,4 @@ models/deeplabv3-resnet-bn2d-1.pth
 *.png
 *.png
 *.zip
+*.pickle

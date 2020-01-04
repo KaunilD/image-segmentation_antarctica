@@ -39,8 +39,6 @@ class SegNet(nn.Module):
 
         self.num_channels = input_channels
 
-        self.vgg16 = models.vgg16(pretrained=True)
-
 
         # Encoder layers
 
@@ -136,7 +134,6 @@ class SegNet(nn.Module):
                                                 nn.BatchNorm2d(512)
                                                 ])
 
-        self.init_vgg_weigts()
 
         # Decoder layers
 
@@ -327,4 +324,4 @@ class SegNet(nn.Module):
             print("dim_0d: {}".format(dim_0d))
 
 
-        return x_00d, x_softmax
+        return x_00d, x_softmax, x_softmax.view(x_softmax.size(0), -1)

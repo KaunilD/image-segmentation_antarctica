@@ -52,7 +52,7 @@ class GTiffDataset(torch_data.Dataset):
                     j:j+self.tile_size
                 ]
 
-                if np.sum(np.sum(np.sum(img_tile))) == 0 or np.prod(mask_tile.shape) != self.tile_size*self.tile_size:
+                if np.sum(np.sum(img_tile)) <= self.tile_size*self.tile_size  or np.prod(mask_tile.shape) != self.tile_size*self.tile_size:
                     continue
 
                 i_tiles.append(img_tile)
@@ -76,7 +76,7 @@ class GTiffDataset(torch_data.Dataset):
             image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM))
 
             cv2.normalize(image, image, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            image = np.moveaxis(image, 2 ,0)
+            image = np.reshape(image, (1, image.shape[0], image.shape[1]))
 
             mask = np.asarray(mask)
             _, mask = cv2.threshold(mask, 127, 1, cv2.THRESH_BINARY)
@@ -162,12 +162,14 @@ if __name__=="__main__":
 
     images_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV02/' + '*_3031.tif'))
     masks_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV02/' + '*_3031_mask.tif'))
-
-
+    import pickle
+    with open("images.pickle", "wb") as file_:
+        pickle.dump(images_list, file_)
+    #sys.exit(0)
     gtiffdataset = GTiffDataset(
         [images_list[:100], masks_list[:100]],
         tile_size=256, split='train', stride=256, debug=False)
-
+    #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
         [images_list[100:], masks_list[100:]],
         tile_size=256, split='val', stride=256, debug=False)
@@ -176,21 +178,23 @@ if __name__=="__main__":
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
 
 
-    model = uresnet.UResNet()
+    model = deeplab.DeepLab()
 
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
 
+    model.load_state_dict(torch.load("../models/session_2/deeplab/deeplab---bn2d-18.pth")["model"])
+
     model.to(device)
 
-    optimizer = torch.optim.Adam(lr=0.005, weight_decay=1e-3,
-        params=filter(lambda p: p.requires_grad, model.parameters())
+    optimizer = torch.optim.SGD(lr=0.001, weight_decay=1e-3,
+        params= model.parameters()
     )
 
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, factor=0.5, verbose=True
+        optimizer, factor=0.5, verbose=True, patience=5
     )
 
 
