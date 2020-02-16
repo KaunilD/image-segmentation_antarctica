@@ -1,3 +1,4 @@
+import pickle
 import cv2
 from PIL import Image
 import numpy as np
@@ -16,7 +17,7 @@ import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
 from models import deeplab, uresnet
-from models.pytorch.segmentation.deeplabv3 import DeepLabHead
+from models.pytorch.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision import models
 
 Image.MAX_IMAGE_PIXELS = None
@@ -81,7 +82,7 @@ class GTiffDataset(torch_data.Dataset):
             image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM))
 
             cv2.normalize(image, image, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            image = np.reshape(image, (1, image.shape[0], image.shape[1]))
+            image = np.reshape(image, (3, image.shape[0], image.shape[1]))
 
             mask = np.asarray(mask)
             _, mask = cv2.threshold(mask, 127, 1, cv2.THRESH_BINARY)
@@ -175,9 +176,8 @@ if __name__=="__main__":
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     images_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV02/' + '*_3031.tif'))
-    masks_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV02/' + '*_3031_mask.tif'))
-    import pickle
     with open("images.pickle", "wb") as file_:
+    masks_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV02/' + '*_3031_mask.tif'))
         pickle.dump(images_list, file_)
     #sys.exit(0)
     gtiffdataset = GTiffDataset(
@@ -208,7 +208,7 @@ if __name__=="__main__":
 
     train_log = []
     for epoch in range(epochs):
-        
+
         train_loss = train(model, optimizer, criterion, device, train_dataloader)
         val_loss = validate(model, criterion, device, train_dataloader)
 
