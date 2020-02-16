@@ -16,9 +16,10 @@ import torch.utils.data as torch_data
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
-from models import deeplab, uresnet
-from models.pytorch.models.segmentation.deeplabv3 import DeepLabHead
-from models.pytorch.models.segmentation.segmentation import deeplabv3_resnet101
+#from models import deeplab, uresnet
+from models_pytorch.models.segmentation.deeplabv3 import DeepLabHead
+from torchvision import models
+#from models.pytorch.models.segmentation.segmentation import deeplabv3_resnet101
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -155,7 +156,7 @@ def validate(model, criterion, device, dataloader):
     return val_loss
 
 def createDeepLabv3(outputchannels=1):
-    model = deeplabv3_resnet101(
+    model = models.segmentation.deeplabv3_resnet101(
         pretrained=True, progress=True)
     # Added a Sigmoid activation after the last convolution layer
     model.classifier = DeepLabHead(2048, outputchannels)
@@ -188,16 +189,16 @@ if __name__=="__main__":
         [images_list[20:], masks_list[20:]],
         tile_size=256, split='val', stride=256, debug=False)
 
-    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=16)
-    val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=16)
+    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
+    val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
 
 
     model = createDeepLabv3()
-    """
+    
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
-     """
+    
     model.to(device)
 
     optimizer = torch.optim.SGD(lr=1e-4, weight_decay=1e-3,
