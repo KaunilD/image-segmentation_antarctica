@@ -16,10 +16,8 @@ import torch.utils.data as torch_data
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
-#from models import deeplab, uresnet
 from models_pytorch.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision import models
-#from models.pytorch.models.segmentation.segmentation import deeplabv3_resnet101
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -194,11 +192,12 @@ if __name__=="__main__":
 
 
     model = createDeepLabv3()
-    
+
+
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
-    
+    model.module.name = "deeplabv3_pretrained"
     model.to(device)
 
     optimizer = torch.optim.SGD(lr=1e-4, weight_decay=1e-3,
