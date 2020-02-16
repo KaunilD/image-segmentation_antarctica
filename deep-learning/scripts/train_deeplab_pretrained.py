@@ -181,15 +181,15 @@ if __name__=="__main__":
         pickle.dump(images_list, file_)
     #sys.exit(0)
     gtiffdataset = GTiffDataset(
-        [images_list[:2], masks_list[:2]],
+        [images_list[:20], masks_list[:20]],
         tile_size=256, split='train', stride=256, debug=False)
     #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
-        [images_list[2:3], masks_list[2:3]],
+        [images_list[20:], masks_list[20:]],
         tile_size=256, split='val', stride=256, debug=False)
 
-    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
-    val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
+    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=16)
+    val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=16)
 
 
     model = createDeepLabv3()
