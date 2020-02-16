@@ -18,7 +18,6 @@ import torch.nn.init as init
 import torch.nn.functional as F
 from models import deeplab, uresnet
 from models.pytorch.models.segmentation.deeplabv3 import DeepLabHead
-from torchvision import models
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -155,7 +154,7 @@ def validate(model, criterion, device, dataloader):
     return val_loss
 
 def createDeepLabv3(outputchannels=1):
-    model = models.pytorch.segmentation.deeplabv3_resnet101(
+    model = models.pytorch.models.segmentation.deeplabv3_resnet101(
         pretrained=True, progress=True)
     # Added a Sigmoid activation after the last convolution layer
     model.classifier = DeepLabHead(2048, outputchannels)
