@@ -57,7 +57,7 @@ class GTiffDataset(torch_data.Dataset):
                     j:j+self.tile_size
                 ]
 
-                if np.sum(np.sum(img_tile)) <= self.tile_size*self.tile_size  or np.prod(mask_tile.shape) != self.tile_size*self.tile_size:
+                if np.prod(mask_tile.shape) != 3*self.tile_size*self.tile_size:
                     continue
 
                 i_tiles.append(img_tile)
