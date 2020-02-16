@@ -7,6 +7,7 @@ import math
 import os
 import sys
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from sklearn.metrics import roc_auc_score, f1_score
 
@@ -49,7 +50,7 @@ class GTiffDataset(torch_data.Dataset):
                 img_tile = image[
                     :,
                     i:i+self.tile_size,
-                    j:j+self.tile_size
+                    j:j+self.tile_size,
                 ]
 
                 mask_tile = mask[
@@ -57,7 +58,8 @@ class GTiffDataset(torch_data.Dataset):
                     j:j+self.tile_size
                 ]
 
-                if np.prod(mask_tile.shape) != self.tile_size*self.tile_size:
+
+                if np.sum(img_tile>0) != 3*self.tile_size*self.tile_size or np.prod(mask_tile.shape) != self.tile_size*self.tile_size:
                     continue
 
                 i_tiles.append(img_tile)
@@ -66,8 +68,8 @@ class GTiffDataset(torch_data.Dataset):
                 if self.debug:
                     # Debugging the tiles
                     img_tile = np.moveaxis(img_tile, 0, -1)
-                    cv2.imwrite("debug/" + str(i) + "_" + str(j) + "_img.png", img_tile)
-                    cv2.imwrite("debug/" + str(i) + "_" + str(j) + "_mask.png", mask_tile)
+                    plt.imsave("debug/" + str(i) + "_" + str(j) + "_img.png", img_tile)
+                    plt.imsave("debug/" + str(i) + "_" + str(j) + "_mask.png", mask_tile)
 
         return i_tiles, m_tiles
         # Calcium@20
@@ -78,13 +80,14 @@ class GTiffDataset(torch_data.Dataset):
 
             image = Image.open(img)
             mask = Image.open(msk)
-            image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM))
 
-            cv2.normalize(image, image, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            image = np.reshape(image, (3, image.shape[0], image.shape[1]))
+            image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM), dtype=np.float32)
 
-            mask = np.asarray(mask)
-            _, mask = cv2.threshold(mask, 127, 1, cv2.THRESH_BINARY)
+            image/=255.0
+            image = np.moveaxis(image, -1, 0)
+
+            mask = np.asarray(mask, dtype=np.float32)
+            mask/=255.0
 
             i_tiles, m_tiles = self.get_tiles(image, mask)
             for im, ma in zip(i_tiles, m_tiles):
@@ -180,14 +183,14 @@ if __name__=="__main__":
         pickle.dump(images_list, file_)
     #sys.exit(0)
     gtiffdataset = GTiffDataset(
-        [images_list[:2], masks_list[:2]],
+        [images_list[:1], masks_list[:1]],
         tile_size=256, split='train', stride=256, debug=False)
     #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
-        [images_list[22:], masks_list[22:]],
+        [images_list[24:], masks_list[24:]],
         tile_size=256, split='val', stride=256, debug=False)
 
-    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
+    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=64)
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
 
 
