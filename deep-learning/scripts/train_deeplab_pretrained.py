@@ -208,6 +208,7 @@ if __name__=="__main__":
 
     train_log = []
     for epoch in range(epochs):
+        
         train_loss = train(model, optimizer, criterion, device, train_dataloader)
         val_loss = validate(model, criterion, device, train_dataloader)
 

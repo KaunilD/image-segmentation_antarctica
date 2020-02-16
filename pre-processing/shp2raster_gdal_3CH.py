@@ -113,11 +113,11 @@ if __name__ == "__main__":
         tif_ds = gdal.Translate(
             "{}/{}_3031.tif".format(OUT_SUFFIX, image_id), image_id2image[image_id].get_path(),
             format='GTiff', outputType=gdal.GDT_Byte,
-            bandList=[7, 3, 0],
+            bandList=[8, 4, 1],
             scaleParams=[
-                [tif_ds.GetRasterBand(7).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(7).GetStatistics(0, 1)[1]],
-                [tif_ds.GetRasterBand(3).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(3).GetStatistics(0, 1)[1]],
-                [tif_ds.GetRasterBand(0).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(0).GetStatistics(0, 1)[1]],
+                [tif_ds.GetRasterBand(8).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(8).GetStatistics(0, 1)[1]],
+                [tif_ds.GetRasterBand(4).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(4).GetStatistics(0, 1)[1]],
+                [tif_ds.GetRasterBand(1).GetStatistics(0, 1)[0], tif_ds.GetRasterBand(1).GetStatistics(0, 1)[1]],
             ],
         )
 
