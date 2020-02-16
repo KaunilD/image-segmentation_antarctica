@@ -1,4 +1,3 @@
-import torch
 import cv2
 from PIL import Image
 import numpy as np
@@ -7,6 +6,9 @@ import math
 import os
 import sys
 from tqdm import tqdm
+
+from sklearn.metrics import roc_auc_score, f1_score
+
 import torch
 import torchvision.transforms as transforms
 import torch.utils.data as torch_data
@@ -14,6 +16,8 @@ import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
 from models import deeplab, uresnet
+from models.pytorch.segmentation.deeplabv3 import DeepLabHead
+from torchvision import models
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -149,6 +153,15 @@ def validate(model, criterion, device, dataloader):
             tbar.set_description('Val loss: %.3f' % (train_loss / (i + 1)))
     return val_loss
 
+def createDeepLabv3(outputchannels=1):
+    model = models.pytorch.segmentation.deeplabv3_resnet101(
+        pretrained=True, progress=True)
+    # Added a Sigmoid activation after the last convolution layer
+    model.classifier = DeepLabHead(2048, outputchannels)
+    # Set the model in training mode
+    model.train()
+    return model
+
 if __name__=="__main__":
 
     print("torch.cuda.is_available()   =", torch.cuda.is_available())
@@ -179,27 +192,20 @@ if __name__=="__main__":
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
 
 
-    model = deeplab.DeepLab()
+    model = createDeepLabv3()
 
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
 
-    model.load_state_dict(torch.load("../models/session_2/deeplab/deeplab---bn2d-18.pth")["model"])
-
     model.to(device)
 
-    optimizer = torch.optim.SGD(lr=0.001, weight_decay=1e-3,
+    optimizer = torch.optim.SGD(lr=1e-4, weight_decay=1e-3,
         params= model.parameters()
     )
-
-
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, factor=0.5, verbose=True, patience=5
-    )
-
-
     criterion = focal_loss
+    metrics = {'f1_score': f1_score, 'auroc': roc_auc_score}
+
     train_log = []
     for epoch in range(epochs):
         train_loss = train(model, optimizer, criterion, device, train_dataloader)

@@ -116,8 +116,8 @@ if __name__=="__main__":
     print()
     """
     root_dir = '../../data/pre-processed/dryvalleys/WV02/'
-    stride = 256
-    tile_size = 256
+    stride = 128
+    tile_size = 128
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -132,7 +132,7 @@ if __name__=="__main__":
     images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))[116:117]
     print(images)
 
-    gtiffdataset = GTiffDataset(images, split='test', stride=256, debug=False)
+    gtiffdataset = GTiffDataset(images, split='test', stride=stride, tile_size=tile_size, debug=False)
     test_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=8)
     outputs = test(model, device, test_dataloader)
 
