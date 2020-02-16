@@ -213,8 +213,6 @@ if __name__=="__main__":
         train_loss = train(model, optimizer, criterion, device, train_dataloader)
         val_loss = validate(model, criterion, device, train_dataloader)
 
-        scheduler.step(val_loss)
-
         state = {
             'model': model.state_dict(),
             'optimizer': optimizer.state_dict()
