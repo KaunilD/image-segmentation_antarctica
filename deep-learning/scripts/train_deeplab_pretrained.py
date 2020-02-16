@@ -131,7 +131,7 @@ def train(model, optimizer, criterion, device, dataloader):
         image, target = image.to(device), target.float().to(device)
         optimizer.zero_grad()
         output = model(image)
-        loss = criterion(output, target, device)
+        loss = criterion(output['out'], target)
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
@@ -149,7 +149,7 @@ def validate(model, criterion, device, dataloader):
             image, target = image.to(device), target.float().to(device)
 
             output = model(image)
-            loss = criterion(output, target, device)
+            loss = criterion(output['out'], target)
             val_loss += loss.item()
             tbar.set_description('Val loss: %.3f' % (train_loss / (i + 1)))
     return val_loss
@@ -193,17 +193,18 @@ if __name__=="__main__":
 
 
     model = createDeepLabv3()
-
+    """
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
-
+     """
     model.to(device)
 
     optimizer = torch.optim.SGD(lr=1e-4, weight_decay=1e-3,
         params= model.parameters()
     )
-    criterion = focal_loss
+
+    criterion = torch.nn.MSELoss(reduction='mean')
     metrics = {'f1_score': f1_score, 'auroc': roc_auc_score}
 
     train_log = []
