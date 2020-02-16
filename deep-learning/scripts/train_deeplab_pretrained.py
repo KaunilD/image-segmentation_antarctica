@@ -180,11 +180,11 @@ if __name__=="__main__":
         pickle.dump(images_list, file_)
     #sys.exit(0)
     gtiffdataset = GTiffDataset(
-        [images_list[:20], masks_list[:20]],
+        [images_list[:2], masks_list[:2]],
         tile_size=256, split='train', stride=256, debug=False)
     #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
-        [images_list[20:], masks_list[20:]],
+        [images_list[22:], masks_list[22:]],
         tile_size=256, split='val', stride=256, debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=32)
