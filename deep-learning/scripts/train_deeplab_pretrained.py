@@ -175,9 +175,9 @@ if __name__=="__main__":
     epochs = 30
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    images_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV02/' + '*_3031.tif'))
+    images_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV03/' + '*_3031.tif'))
+    masks_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV03/' + '*_3031_mask.tif'))
     with open("images.pickle", "wb") as file_:
-    masks_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV02/' + '*_3031_mask.tif'))
         pickle.dump(images_list, file_)
     #sys.exit(0)
     gtiffdataset = GTiffDataset(
