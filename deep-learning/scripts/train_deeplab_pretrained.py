@@ -110,8 +110,9 @@ class GTiffDataset(torch_data.Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        sample = [self.images[idx], self.masks[idx]]
-        return sample
+        if self.transform:
+            return [self.transform(self.images[idx]), self.masks[idx]]
+        return [self.images[idx], self.masks[idx]]
 
 def focal_loss(output, target, device, gamma=2, alpha=0.5):
     n, c, h, w = output.size()
@@ -236,7 +237,7 @@ if __name__=="__main__":
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
-        ]), 
+        ]),
         debug=True)
     #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
