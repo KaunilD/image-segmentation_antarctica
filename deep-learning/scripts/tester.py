@@ -13,8 +13,11 @@ import torch.utils.data as torch_data
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
-from models import deeplab, uresnet
+
 import matplotlib.pyplot as plt
+
+from models_pytorch.models.segmentation.deeplabv3 import DeepLabHead
+from torchvision import models
 
 
 Image.MAX_IMAGE_PIXELS = None
@@ -67,9 +70,8 @@ class GTiffDataset(torch_data.Dataset):
             image = Image.open(img)
             image = np.asarray(image)
 
-            cv2.normalize(image, image, alpha=0.0, beta=1.0, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            #image = np.moveaxis(image, 2 ,0)
-            image = np.reshape(image, (1, image.shape[0], image.shape[1]))
+            image/=255.0
+            image = np.moveaxis(image, -1, 0)
             i_tiles = self.get_tiles(image)
 
             for im in i_tiles:
@@ -107,6 +109,16 @@ def test(model, device, dataloader):
 
     return outputs
 
+
+def createDeepLabv3(outputchannels=1):
+    model = models.segmentation.deeplabv3_resnet101(
+        pretrained=True, progress=True)
+    # Added a Sigmoid activation after the last convolution layer
+    model.classifier = DeepLabHead(2048, outputchannels)
+    # Set the model in training mode
+    model.train()
+    return model
+
 if __name__=="__main__":
     """
     print("torch.cuda.is_available()   =", torch.cuda.is_available())
@@ -115,21 +127,21 @@ if __name__=="__main__":
     print("torch.cuda.current_device() =", torch.cuda.current_device())
     print()
     """
-    root_dir = '../../data/pre-processed/dryvalleys/WV02/'
+    root_dir = '../../data/pre-processed/dryvalleys/WV03/'
     stride = 128
     tile_size = 128
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = deeplab.DeepLab()
+    model = createDeepLabv3()
     #model = uresnet.UResNet()
     model = nn.DataParallel(model)
 
-    model.load_state_dict(torch.load("../models/session_1/deeplab/deeplab---bn2d-18.pth")["model"])
+    model.load_state_dict(torch.load("../models/deeplabv3_pretrained---bn2d-1.pth")["model"])
     model.to(device)
     model.eval()
 
-    images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))[116:117]
+    images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))[0:1]
     print(images)
 
     gtiffdataset = GTiffDataset(images, split='test', stride=stride, tile_size=tile_size, debug=False)
