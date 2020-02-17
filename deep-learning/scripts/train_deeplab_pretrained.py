@@ -178,18 +178,56 @@ if __name__=="__main__":
     model_save_pth = '../models'
     epochs = 50
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+    """
     images_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV03/' + '*_3031.tif'))
     masks_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV03/' + '*_3031_mask.tif'))
     with open("images.pickle", "wb") as file_:
         pickle.dump(images_list, file_)
+    """
+    images_list = [
+        "../../data/pre-processed/dryvalleys/WV03/1040010006B14C00_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/10400100466E0A00_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/10400100355E0900_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/1040010038223D00_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/1040010029761800_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/1040010029AB0800_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/1040010006846000_3031.tif"
+    ]
+    masks_list = [
+        "../../data/pre-processed/dryvalleys/WV03/1040010006B14C00_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/10400100466E0A00_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/10400100355E0900_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/1040010038223D00_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/1040010029761800_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/1040010029AB0800_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/1040010006846000_3031_mask.tif"
+    ]
+    train_len = int(0.8*len(images_list))
     #sys.exit(0)
     gtiffdataset = GTiffDataset(
-        [images_list[:22], masks_list[:22]],
+        [images_list[:train_len], masks_list[:train_len]],
         tile_size=256, split='train', stride=256, debug=False)
     #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
-        [images_list[22:], masks_list[22:]],
+        [images_list[train_len:], masks_list[train_len:]],
         tile_size=256, split='val', stride=256, debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=64)
@@ -205,7 +243,7 @@ if __name__=="__main__":
     model.module.name = "deeplabv3_pretrained"
     model.to(device)
 
-    optimizer = torch.optim.SGD(lr=1e-4, weight_decay=1e-3,
+    optimizer = torch.optim.SGD(lr=1e-4,
         params= model.parameters()
     )
 
