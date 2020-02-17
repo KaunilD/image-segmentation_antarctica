@@ -68,7 +68,7 @@ class GTiffDataset(torch_data.Dataset):
         for idx, img in enumerate(self.root_dir):
             print('Reading item # {} - {}/{}'.format(img, idx+1, len(self.root_dir)))
             image = Image.open(img)
-            image = np.asarray(image)
+            image = np.asarray(image, dtype=np.float32)
 
             image/=255.0
             image = np.moveaxis(image, -1, 0)
@@ -135,9 +135,12 @@ if __name__=="__main__":
 
     model = createDeepLabv3()
     #model = uresnet.UResNet()
-    model = nn.DataParallel(model)
 
+    if torch.cuda.device_count() > 1:
+      print("Using ", torch.cuda.device_count(), " GPUs!")
+      model = nn.DataParallel(model)
     model.load_state_dict(torch.load("../models/deeplabv3_pretrained---bn2d-1.pth")["model"])
+    model.module.name = "deeplabv3_pretrained"
     model.to(device)
     model.eval()
 
