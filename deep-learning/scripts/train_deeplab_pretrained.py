@@ -40,8 +40,8 @@ class GTiffDataset(torch_data.Dataset):
 
     def get_tiles(self, image, mask):
         i_tiles, m_tiles = [], []
-        width = mask.shape[2] - mask.shape[2]%self.tile_size
-        height = mask.shape[1] - mask.shape[1]%self.tile_size
+        width = image.shape[1] - image.shape[1]%self.tile_size
+        height = image.shape[0] - image.shape[0]%self.tile_size
 
         for i in range(0, height, self.stride):
             if i+self.tile_size > height:
@@ -59,7 +59,7 @@ class GTiffDataset(torch_data.Dataset):
                     j:j+self.tile_size
                 ]
 
-                if np.prod(mask_tile.shape)!= 256*256 or np.prod(img_tile.size)!= 3*256*256:
+                if np.prod(mask_tile.shape)!= 256*256 or np.prod(img_tile.shape)!= 3*256*256:
                     print("error")
 
                 if np.sum(img_tile>0) != 3*self.tile_size*self.tile_size or np.prod(mask_tile.shape) != self.tile_size*self.tile_size:
@@ -84,7 +84,7 @@ class GTiffDataset(torch_data.Dataset):
             image = Image.open(img)
             mask = Image.open(msk)
 
-            image = image.transpose(Image.FLIP_TOP_BOTTOM)
+            image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM), dtype=np.uint8)
 
             mask = np.asarray(mask, dtype=np.float32)
             mask = np.reshape(mask, (1,)+mask.shape)
