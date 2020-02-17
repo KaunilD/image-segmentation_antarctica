@@ -84,7 +84,7 @@ class GTiffDataset(torch_data.Dataset):
             image = Image.open(img)
             mask = Image.open(msk)
 
-            image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM), dtype=np.float32)
+            image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM), dtype=np.uint8)
 
             mask = np.asarray(mask, dtype=np.float32)
             mask = np.reshape(mask, (1,)+mask.shape)
