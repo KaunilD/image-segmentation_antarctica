@@ -48,9 +48,9 @@ class GTiffDataset(torch_data.Dataset):
                 break
             for j in range(0, width, self.stride):
                 img_tile = image[
-                    :,
                     i:i+self.tile_size,
                     j:j+self.tile_size,
+                    :
                 ]
 
                 mask_tile = mask[
@@ -86,9 +86,6 @@ class GTiffDataset(torch_data.Dataset):
 
             image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM), dtype=np.float32)
 
-            image/=255.0
-            image = np.moveaxis(image, -1, 0)
-
             mask = np.asarray(mask, dtype=np.float32)
             mask = np.reshape(mask, (1,)+mask.shape)
             mask/=255.0
@@ -110,7 +107,6 @@ class GTiffDataset(torch_data.Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        print(transforms.ToTensor(self.images[idx]).size)
         if self.transform:
             return [self.transform(self.images[idx]), self.masks[idx]]
         return [self.images[idx], self.masks[idx]]
