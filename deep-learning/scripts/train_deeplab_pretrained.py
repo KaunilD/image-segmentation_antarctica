@@ -111,6 +111,7 @@ class GTiffDataset(torch_data.Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         if self.transform:
+            print(self.images[idx].shape)
             return [self.transform(self.images[idx]), self.masks[idx]]
         return [self.images[idx], self.masks[idx]]
 
