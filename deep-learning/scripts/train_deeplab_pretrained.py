@@ -228,7 +228,7 @@ if __name__=="__main__":
     train_len = int(0.8*len(images_list))
     #sys.exit(0)
     gtiffdataset = GTiffDataset(
-        [images_list[:1], masks_list[:1]],
+        [images_list[:22], masks_list[:22]],
         tile_size=256, split='train', stride=256,
         transform=transforms.Compose([
             transforms.ToTensor(),
@@ -238,7 +238,7 @@ if __name__=="__main__":
         debug=False)
     #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
-        [images_list[1:2], masks_list[1:2]],
+        [images_list[22:], masks_list[22:]],
         tile_size=256, split='val', stride=256, debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=64, drop_last=True)
