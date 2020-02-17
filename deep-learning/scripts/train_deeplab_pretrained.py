@@ -110,8 +110,8 @@ class GTiffDataset(torch_data.Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
+        print(transforms.ToTensor(self.images[idx]).size)
         if self.transform:
-            print(self.images[idx].shape)
             return [self.transform(self.images[idx]), self.masks[idx]]
         return [self.images[idx], self.masks[idx]]
 
