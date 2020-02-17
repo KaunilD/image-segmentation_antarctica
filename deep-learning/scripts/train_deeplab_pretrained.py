@@ -232,8 +232,8 @@ if __name__=="__main__":
         [images_list[train_len:], masks_list[train_len:]],
         tile_size=256, split='val', stride=256, debug=False)
 
-    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=64)
-    val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64)
+    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=64, drop_last=True)
+    val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64, drop_last=True)
 
 
     model = createDeepLabv3()
