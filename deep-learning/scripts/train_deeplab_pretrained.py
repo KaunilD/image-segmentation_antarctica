@@ -176,7 +176,7 @@ if __name__=="__main__":
     print()
 
     model_save_pth = '../models'
-    epochs = 30
+    epochs = 50
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     images_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV03/' + '*_3031.tif'))
