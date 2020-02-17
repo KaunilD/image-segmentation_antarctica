@@ -139,12 +139,12 @@ if __name__=="__main__":
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
-    model.load_state_dict(torch.load("../models/deeplabv3_pretrained---bn2d-1.pth")["model"])
+    model.load_state_dict(torch.load("../models/deeplabv3_pretrained---bn2d-2.pth")["model"])
     model.module.name = "deeplabv3_pretrained"
     model.to(device)
     model.eval()
 
-    images = sorted(glob.glob(root_dir + '/' + '*_3031.tif'))[0:1]
+    images = sorted(glob.glob(root_dir + '/' + '*104001000647F00*_3031.tif'))[0:1]
     print(images)
 
     gtiffdataset = GTiffDataset(images, split='test', stride=stride, tile_size=tile_size, debug=False)
