@@ -40,8 +40,8 @@ class GTiffDataset(torch_data.Dataset):
 
     def get_tiles(self, image, mask):
         i_tiles, m_tiles = [], []
-        width = image.shape[1] - image.shape[1]%self.tile_size
-        height = image.shape[0] - image.shape[0]%self.tile_size
+        width = mask_tile.shape[1] - mask_tile.shape[1]%self.tile_size
+        height = mask_tile.shape[0] - mask_tile.shape[0]%self.tile_size
 
         for i in range(0, height, self.stride):
             if i+self.tile_size > height:
