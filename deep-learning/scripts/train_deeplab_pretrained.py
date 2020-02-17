@@ -54,6 +54,7 @@ class GTiffDataset(torch_data.Dataset):
                 ]
 
                 mask_tile = mask[
+                    :,
                     i:i+self.tile_size,
                     j:j+self.tile_size
                 ]
@@ -87,6 +88,7 @@ class GTiffDataset(torch_data.Dataset):
             image = np.moveaxis(image, -1, 0)
 
             mask = np.asarray(mask, dtype=np.float32)
+            mask = np.reshape(mask, (1, self.tile_size, self.tile_size))
             mask/=255.0
 
             i_tiles, m_tiles = self.get_tiles(image, mask)
@@ -183,11 +185,11 @@ if __name__=="__main__":
         pickle.dump(images_list, file_)
     #sys.exit(0)
     gtiffdataset = GTiffDataset(
-        [images_list[:1], masks_list[:1]],
+        [images_list[:22], masks_list[:22]],
         tile_size=256, split='train', stride=256, debug=False)
     #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
-        [images_list[24:], masks_list[24:]],
+        [images_list[22:], masks_list[22:]],
         tile_size=256, split='val', stride=256, debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=64)
