@@ -88,7 +88,7 @@ class GTiffDataset(torch_data.Dataset):
             image = np.moveaxis(image, -1, 0)
 
             mask = np.asarray(mask, dtype=np.float32)
-            mask = np.reshape(mask, (1, self.tile_size, self.tile_size))
+            mask = np.reshape(mask, (1,)+mask.shape)
             mask/=255.0
 
             i_tiles, m_tiles = self.get_tiles(image, mask)
