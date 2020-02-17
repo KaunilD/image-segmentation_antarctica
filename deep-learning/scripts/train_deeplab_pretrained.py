@@ -40,8 +40,8 @@ class GTiffDataset(torch_data.Dataset):
 
     def get_tiles(self, image, mask):
         i_tiles, m_tiles = [], []
-        width = image.shape[2] - image.shape[2]%self.tile_size
-        height = image.shape[1] - image.shape[1]%self.tile_size
+        width = image.shape[1] - image.shape[1]%self.tile_size
+        height = image.shape[0] - image.shape[0]%self.tile_size
 
         for i in range(0, height, self.stride):
             if i+self.tile_size > height:
@@ -84,7 +84,7 @@ class GTiffDataset(torch_data.Dataset):
             image = Image.open(img)
             mask = Image.open(msk)
 
-            image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM), dtype=np.uint8)
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
             mask = np.asarray(mask, dtype=np.float32)
             mask = np.reshape(mask, (1,)+mask.shape)
@@ -228,7 +228,7 @@ if __name__=="__main__":
     train_len = int(0.8*len(images_list))
     #sys.exit(0)
     gtiffdataset = GTiffDataset(
-        [images_list[:22], masks_list[:22]],
+        [images_list[:train_len], masks_list[:train_len]],
         tile_size=256, split='train', stride=256,
         transform=transforms.Compose([
             transforms.ToTensor(),
@@ -238,7 +238,7 @@ if __name__=="__main__":
         debug=False)
     #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
-        [images_list[22:], masks_list[22:]],
+        [images_list[train_len:], masks_list[train_len:]],
         tile_size=256, split='val', stride=256, debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=64, drop_last=True)
