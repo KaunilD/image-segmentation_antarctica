@@ -202,7 +202,9 @@ if __name__=="__main__":
         "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031.tif",
         "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031.tif",
         "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/1040010006846000_3031.tif"
+        "../../data/pre-processed/dryvalleys/WV03/1040010006846000_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/10400100467A6F00_3031.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001004664AD00_3031.tif"
     ]
     masks_list = [
         "../../data/pre-processed/dryvalleys/WV03/1040010006B14C00_3031_mask.tif",
@@ -220,17 +222,26 @@ if __name__=="__main__":
         "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031_mask.tif",
         "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031_mask.tif",
         "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/1040010006846000_3031_mask.tif"
+        "../../data/pre-processed/dryvalleys/WV03/1040010006846000_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/10400100467A6F00_3031_mask.tif",
+        "../../data/pre-processed/dryvalleys/WV03/104001004664AD00_3031_mask.tif"
+
     ]
     train_len = int(0.8*len(images_list))
     #sys.exit(0)
     gtiffdataset = GTiffDataset(
         [images_list[:train_len], masks_list[:train_len]],
-        tile_size=256, split='train', stride=256, debug=False)
+        tile_size=256, split='train', stride=256,
+        transform=transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])
+        ]), 
+        debug=True)
     #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
         [images_list[train_len:], masks_list[train_len:]],
-        tile_size=256, split='val', stride=256, debug=False)
+        tile_size=256, split='val', stride=256, debug=True)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=64, drop_last=True)
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64, drop_last=True)
