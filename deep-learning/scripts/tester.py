@@ -68,7 +68,7 @@ class GTiffDataset(torch_data.Dataset):
         for idx, img in enumerate(self.root_dir):
             print('Reading item # {} - {}/{}'.format(img, idx+1, len(self.root_dir)))
             image = Image.open(img)
-            image = np.asarray(image, dtype=np.float32)
+            image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM), dtype=np.float32)
 
             image/=255.0
             image = np.moveaxis(image, -1, 0)
