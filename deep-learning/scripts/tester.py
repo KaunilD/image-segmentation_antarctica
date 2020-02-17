@@ -102,7 +102,7 @@ def test(model, device, dataloader):
             image = sample.float()
             image = image.to(device)
             out = model(image)
-            out = softmax(out)
+            out = softmax(out['out'])
             for jdx, j in enumerate(out):
                 outputs.append(j.cpu().numpy())
             tbar.set_description('{}%'.format(int((i/num_samples)*100)))
