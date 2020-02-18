@@ -40,17 +40,17 @@ class GTiffDataset(torch_data.Dataset):
 
     def get_tiles(self, image):
         i_tiles = []
-        width = image.shape[2] - image.shape[2]%self.tile_size
-        height = image.shape[1] - image.shape[1]%self.tile_size
+        width = image.shape[1] - image.shape[1]%self.tile_size
+        height = image.shape[0] - image.shape[0]%self.tile_size
 
         for i in range(0, height, self.stride):
             if i+self.tile_size > height:
                 break
             for j in range(0, width, self.stride):
                 img_tile = image[
-                    :,
                     i:i+self.tile_size,
-                    j:j+self.tile_size
+                    j:j+self.tile_size,
+                    :
                 ]
 
                 i_tiles.append(img_tile)
@@ -68,10 +68,8 @@ class GTiffDataset(torch_data.Dataset):
         for idx, img in enumerate(self.root_dir):
             print('Reading item # {} - {}/{}'.format(img, idx+1, len(self.root_dir)))
             image = Image.open(img)
-            image = np.asarray(image.transpose(Image.FLIP_TOP_BOTTOM), dtype=np.float32)
+            image = np.asarray(image, dtype=np.uint8)
 
-            image/=255.0
-            image = np.moveaxis(image, -1, 0)
             i_tiles = self.get_tiles(image)
 
             for im in i_tiles:
@@ -89,6 +87,8 @@ class GTiffDataset(torch_data.Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         sample = self.images[idx]
+        if self.transform:
+            return self.transform(self.images[idx])
         return sample
 
 def test(model, device, dataloader):
@@ -101,8 +101,7 @@ def test(model, device, dataloader):
         for i, sample in enumerate(tbar):
             image = sample.float()
             image = image.to(device)
-            out = model(image)
-            out = softmax(out['out'])
+            out = model(image)['out']
             for jdx, j in enumerate(out):
                 outputs.append(j.cpu().numpy())
             tbar.set_description('{}%'.format(int((i/num_samples)*100)))
@@ -139,16 +138,29 @@ if __name__=="__main__":
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
-    model.load_state_dict(torch.load("../models/deeplabv3_pretrained---bn2d-2.pth")["model"])
+    model.load_state_dict(torch.load("../models/deeplabv3_pretrained---bn2d-10.pth")["model"])
     model.module.name = "deeplabv3_pretrained"
     model.to(device)
     model.eval()
 
-    images = sorted(glob.glob(root_dir + '/' + '104001002722CB00_3031.tif'))[0:1]
+    images = sorted(glob.glob(root_dir + '/' + '*.tif'))[3:4]
     print(images)
 
-    gtiffdataset = GTiffDataset(images, split='test', stride=stride, tile_size=tile_size, debug=False)
-    test_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=8)
+    gtiffdataset = GTiffDataset(
+        images, split='test', stride=stride,
+        tile_size=tile_size, debug=False,
+        transform=transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])
+        ])
+    )
+    test_dataloader = torch_data.DataLoader(
+        gtiffdataset,
+        num_workers=0,
+        batch_size=8
+
+    )
     outputs = test(model, device, test_dataloader)
 
 
@@ -156,10 +168,9 @@ if __name__=="__main__":
         counter = 0
 
         image = Image.open(img)
-        image = np.asarray(image)
-        shape = image.shape
+        image = np.asarray(image dtype=np.uint8)
 
-        mask = np.zeros((shape[0], shape[1], 3), dtype=np.float32)
+        mask = np.zeros(image.shape, dtype=np.float32)
 
         width = mask.shape[1] - mask.shape[1]%tile_size
         height = mask.shape[0] - mask.shape[0]%tile_size
