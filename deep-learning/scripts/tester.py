@@ -128,8 +128,8 @@ if __name__=="__main__":
     print()
     """
     root_dir = '../../data/pre-processed/dryvalleys/WV03/'
-    stride = 128
-    tile_size = 128
+    stride = 256
+    tile_size = 256
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -176,7 +176,7 @@ if __name__=="__main__":
 
                 counter+=1
 
-                if np.sum(np.sum(img_tile)) == 0:
+                if np.sum(img_tile>0) != 3*tile_size*tile_size:
                     continue
 
                 output = outputs[counter]
