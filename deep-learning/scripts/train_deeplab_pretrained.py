@@ -135,7 +135,7 @@ def train(model, optimizer, criterion, device, dataloader):
         image, target = image.to(device), target.float().to(device)
         optimizer.zero_grad()
         output = model(image)
-        loss = criterion(output['out'], target)
+        loss = criterion(output['out'], target, device)
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
@@ -153,7 +153,7 @@ def validate(model, criterion, device, dataloader):
             image, target = image.to(device), target.float().to(device)
 
             output = model(image)
-            loss = criterion(output['out'], target)
+            loss = criterion(output['out'], target, device)
             val_loss += loss.item()
             tbar.set_description('Val loss: %.3f' % (train_loss / (i + 1)))
     return val_loss
@@ -264,7 +264,7 @@ if __name__=="__main__":
         params= model.parameters()
     )
 
-    criterion = torch.nn.MSELoss(reduction='mean')
+    criterion = focal_loss
     metrics = {'f1_score': f1_score, 'auroc': roc_auc_score}
 
     train_log = []
