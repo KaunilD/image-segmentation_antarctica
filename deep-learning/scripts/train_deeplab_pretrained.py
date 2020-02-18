@@ -239,7 +239,13 @@ if __name__=="__main__":
     #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
         [images_list[train_len:], masks_list[train_len:]],
-        tile_size=256, split='val', stride=256, debug=False)
+        tile_size=256, split='val', stride=256,
+        transform=transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])
+        ]),
+        debug=False)
 
     train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=64, drop_last=True)
     val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64, drop_last=True)
