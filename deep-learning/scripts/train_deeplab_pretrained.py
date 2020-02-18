@@ -265,7 +265,7 @@ if __name__=="__main__":
     for epoch in range(epochs):
 
         train_loss = train(model, optimizer, criterion, device, train_dataloader)
-        val_loss = validate(model, criterion, device, train_dataloader)
+        val_loss = validate(model, criterion, device, val_dataloader)
 
         state = {
             'model': model.state_dict(),
