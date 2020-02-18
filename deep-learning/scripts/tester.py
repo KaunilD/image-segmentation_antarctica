@@ -143,7 +143,7 @@ if __name__=="__main__":
     model.to(device)
     model.eval()
 
-    images = sorted(glob.glob(root_dir + '/' + '1040010029AB0800_3031.tif'))[3:4]
+    images = sorted(glob.glob(root_dir + '/' + '1040010029AB0800_3031.tif'))[0:1]
     print(images)
 
     gtiffdataset = GTiffDataset(
