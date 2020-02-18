@@ -168,7 +168,7 @@ if __name__=="__main__":
         counter = 0
 
         image = Image.open(img)
-        image = np.asarray(image dtype=np.uint8)
+        image = np.asarray(image, dtype=np.uint8)
 
         mask = np.zeros(image.shape, dtype=np.float32)
 
