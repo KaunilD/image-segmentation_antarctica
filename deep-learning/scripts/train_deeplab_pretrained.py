@@ -287,7 +287,7 @@ if __name__=="__main__":
     optimizer.load_state_dict(
         torch.load("../models/deeplabv3_pretrained---bn2d-38.pth")['optimizer']
     )
-    for g in oprimizer.param_groups:
+    for g in optimizer.param_groups:
         g['lr'] = 1e-4
 
     criterion = torch.nn.MSELoss(reduction='mean')
