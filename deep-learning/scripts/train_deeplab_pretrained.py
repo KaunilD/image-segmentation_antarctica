@@ -285,7 +285,7 @@ if __name__=="__main__":
         params= model.parameters()
     )
     optimizer.load_state_dict(
-        torch.load("../models/deeplabv3_pretrained---bn2d-38.pth")['optimizer']
+        torch.load("../models/session_0/deeplabv3_pretrained---bn2d-38.pth")['optimizer']
     )
     for g in optimizer.param_groups:
         g['lr'] = 1e-4
