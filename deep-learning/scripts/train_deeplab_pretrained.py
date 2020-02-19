@@ -144,7 +144,7 @@ def train(model, optimizer, criterion, device, dataloader):
         y_true = target.data.cpu().numpy().ravel()
         f1_metric += f1_score(y_true > 0, y_pred > 0.1)
 
-        loss = criterion(output['out'], target, device)
+        loss = criterion(output['out'], target)
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
@@ -171,7 +171,7 @@ def validate(model, criterion, device, dataloader):
             y_true = target.data.cpu().numpy().ravel()
             f1_metric += f1_score(y_true > 0, y_pred > 0.1)
 
-            loss = criterion(output['out'], target, device)
+            loss = criterion(output['out'], target)
             val_loss += loss.item()
             tbar.set_description('Val loss: %.3f' % (train_loss / (i + 1)))
     return f1_metric/(num_samples)
