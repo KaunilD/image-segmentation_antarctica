@@ -2,7 +2,7 @@
 
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --time=80:00:00
+#SBATCH --time=40:00:00
 #SBATCH --partition=sgpu
 #SBATCH --qos=normal
 #SBATCH --output=semseg-train-job-%j.out
