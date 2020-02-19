@@ -281,13 +281,15 @@ if __name__=="__main__":
     model.module.name = "deeplabv3_pretrained"
     model.to(device)
 
-    optimizer = torch.optim.SGD(lr=1e-5,
+    optimizer = torch.optim.SGD(lr=1e-3,
         params= model.parameters()
     )
     optimizer.load_state_dict(
         torch.load("../models/deeplabv3_pretrained---bn2d-38.pth")['optimizer']
     )
-
+    for g in oprimizer.param_groups:
+        g['lr'] = 1e-4
+    
     criterion = torch.nn.MSELoss(reduction='mean')
 
     train_log = []
