@@ -256,7 +256,7 @@ if __name__=="__main__":
         debug=False)
     #sys.exit(0)
     val_gtiffdataset = GTiffDataset(
-        [images_list[23:], masks_list[23:]],
+        [images_list[17:], masks_list[17:]],
         tile_size=256, split='val', stride=256,
         transform=transforms.Compose([
             transforms.ToTensor(),
