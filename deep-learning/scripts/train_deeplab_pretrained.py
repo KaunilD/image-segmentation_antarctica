@@ -194,7 +194,7 @@ if __name__=="__main__":
     print()
 
     model_save_pth = '../models'
-    epochs = 50
+    epochs = 100
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     """
     images_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV03/' + '*_3031.tif'))
@@ -289,7 +289,7 @@ if __name__=="__main__":
     )
     for g in oprimizer.param_groups:
         g['lr'] = 1e-4
-    
+
     criterion = torch.nn.MSELoss(reduction='mean')
 
     train_log = []
