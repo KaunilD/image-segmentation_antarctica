@@ -299,7 +299,7 @@ if __name__=="__main__":
     train_len = int(args.train_test_split * len(images_list))
 
     gtiffdataset = GTiffDataset(
-        [images_list[:train_len], masks_list[:train_len]],
+        [images_list[:1], masks_list[:1]],
         tile_size=256, split='train', stride=256,
         transform=transforms.Compose([
             transforms.ToTensor(),
@@ -309,7 +309,7 @@ if __name__=="__main__":
         debug=False)
 
     val_gtiffdataset = GTiffDataset(
-        [images_list[train_len:], masks_list[train_len:]],
+        [images_list[1:2], masks_list[1:2]],
         tile_size=256, split='val', stride=256,
         transform=transforms.Compose([
             transforms.ToTensor(),
