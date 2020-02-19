@@ -284,17 +284,17 @@ def create_args():
     return parser.parse_args()
 
 if __name__=="__main__":
-
+    """
     print("torch.cuda.is_available()   =", torch.cuda.is_available())
     print("torch.cuda.device_count()   =", torch.cuda.device_count())
     print("torch.cuda.device('cuda')   =", torch.cuda.device('cuda'))
     print("torch.cuda.current_device() =", torch.cuda.current_device())
     print()
-
+    """
     args = create_args()
 
     epochs = args.epochs
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
     images_list, masks_list = get_dataset(args.data_dir)
     train_len = int(args.train_test_split * len(images_list))
 
