@@ -6,6 +6,7 @@ import glob
 import math
 import os
 import sys
+import argparse
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
@@ -94,7 +95,7 @@ class GTiffDataset(torch_data.Dataset):
             for im, ma in zip(i_tiles, m_tiles):
                 tiles[0].append(im)
                 tiles[1].append(ma)
-            print(len(tiles[0]))
+            print("{} tiles obtained.".format(len(tiles[0])))
             del image
             del mask
 
@@ -185,6 +186,103 @@ def createDeepLabv3(outputchannels=1):
     model.train()
     return model
 
+def get_dataset(parent_dir):
+    images_list = [
+        "1040010006B14C00_3031.tif","10400100466E0A00_3031.tif","10400100355E0900_3031.tif",
+        "1040010038223D00_3031.tif","1040010029761800_3031.tif","1040010029AB0800_3031.tif",
+        "104001002722CB00_3031.tif","104001002722CB00_3031.tif","104001002722CB00_3031.tif",
+        "104001002642C800_3031.tif","104001002642C800_3031.tif","104001002642C800_3031.tif",
+        "104001002642C800_3031.tif","104001000647F000_3031.tif","104001000647F000_3031.tif",
+        "1040010006846000_3031.tif","10400100467A6F00_3031.tif","104001004664AD00_3031.tif"
+    ]
+    masks_lists = [
+        "1040010006B14C00_3031_mask.tif","10400100466E0A00_3031_mask.tif","10400100355E0900_3031_mask.tif",
+        "1040010038223D00_3031_mask.tif","1040010029761800_3031_mask.tif","1040010029AB0800_3031_mask.tif",
+        "104001002722CB00_3031_mask.tif","104001002722CB00_3031_mask.tif","104001002722CB00_3031_mask.tif",
+        "104001002642C800_3031_mask.tif","104001002642C800_3031_mask.tif","104001002642C800_3031_mask.tif",
+        "104001002642C800_3031_mask.tif","104001000647F000_3031_mask.tif","104001000647F000_3031_mask.tif",
+        "1040010006846000_3031_mask.tif","10400100467A6F00_3031_mask.tif","104001004664AD00_3031_mask.tif"
+
+    ]
+
+    images_list = [path + '/' + i for i in images_list]
+    masks_list = [path + '/' + i for i in masks_list]
+
+    return images_list, masks_list
+
+def create_args():
+    parser = argparse.ArgumentParser(
+        description="Semantic Segmentation of satellite imagery from antractica \
+        using Pretrained DeepLabV3 model with Resnet 101 backbone"
+    )
+    parser.add_argument(
+        "--root-dir",
+        default="/projects/kadh5719/image-segmentation_antarctica",
+        type=str,
+        help="root directory of the project.",
+    )
+    parser.add_argument(
+        "--data-dir",
+        default="/projects/kadh5719/image-segmentation_antarctica/data/pre-processed/dryvalleys/WV03",
+        type=str,
+        help="directory containing image and masks in *.tif and *_mask.tif scheme.",
+    )
+    parser.add_argument(
+        "--lr",
+        default=1e-4,
+        type=float,
+        help="learning rate.",
+    )
+    parser.add_argument(
+        "--epochs",
+        default=30,
+        type=int,
+        help="training epochs.",
+    )
+
+    parser.add_argument(
+        "--train-batch-size",
+        default=32,
+        type=int,
+        help="training batch size.",
+    )
+    parser.add_argument(
+        "--test-batch-size",
+        default=64,
+        type=int,
+        help="test batch size.",
+    )
+    parser.add_argument(
+        "--train-test-split",
+        default=0.8,
+        type=float,
+        help="train and test data split.",
+    )
+    parser.add_argument(
+        "--restart-checkpoint"
+        default=False,
+        type=bool,
+        help="restart training from a checkpoint."
+    )
+    parser.add_argument(
+        "--checkpoint-path"
+        type=str,
+        help="checkpoint path."
+    )
+    parser.add_argument(
+        "--checkpoint-prefix"
+        type=str,
+        help="checkpoint prefix."
+    )
+    parser.add_argument(
+        "--checkpoint-save-path",
+        default="/projects/kadh5719/image-segmentation_antarctica/deep-learning/models/",
+        type=str,
+        help="path to save models in.",
+    )
+
+    return parse.parse_args()
+
 if __name__=="__main__":
 
     print("torch.cuda.is_available()   =", torch.cuda.is_available())
@@ -193,58 +291,13 @@ if __name__=="__main__":
     print("torch.cuda.current_device() =", torch.cuda.current_device())
     print()
 
-    model_save_pth = '../models'
-    epochs = 100
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    """
-    images_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV03/' + '*_3031.tif'))
-    masks_list = sorted(glob.glob('../../data/pre-processed/dryvalleys/WV03/' + '*_3031_mask.tif'))
-    with open("images.pickle", "wb") as file_:
-        pickle.dump(images_list, file_)
-    """
-    images_list = [
-        "../../data/pre-processed/dryvalleys/WV03/1040010006B14C00_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/10400100466E0A00_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/10400100355E0900_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/1040010038223D00_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/1040010029761800_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/1040010029AB0800_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/1040010006846000_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/10400100467A6F00_3031.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001004664AD00_3031.tif"
-    ]
-    masks_list = [
-        "../../data/pre-processed/dryvalleys/WV03/1040010006B14C00_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/10400100466E0A00_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/10400100355E0900_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/1040010038223D00_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/1040010029761800_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/1040010029AB0800_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002722CB00_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001002642C800_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001000647F000_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/1040010006846000_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/10400100467A6F00_3031_mask.tif",
-        "../../data/pre-processed/dryvalleys/WV03/104001004664AD00_3031_mask.tif"
+    args = create_args()
 
-    ]
-    train_len = int(0.8*len(images_list))
-    #sys.exit(0)
+    epochs = args.epochs
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    images_list, masks_list = get_dataset(args.data_dir)
+    train_len = int(args.train_test_split * len(images_list))
+
     gtiffdataset = GTiffDataset(
         [images_list[:train_len], masks_list[:train_len]],
         tile_size=256, split='train', stride=256,
@@ -254,7 +307,7 @@ if __name__=="__main__":
                                  std=[0.229, 0.224, 0.225])
         ]),
         debug=False)
-    #sys.exit(0)
+
     val_gtiffdataset = GTiffDataset(
         [images_list[train_len:], masks_list[train_len:]],
         tile_size=256, split='val', stride=256,
@@ -265,35 +318,35 @@ if __name__=="__main__":
         ]),
         debug=False)
 
-    train_dataloader = torch_data.DataLoader(gtiffdataset, num_workers=0, batch_size=64, drop_last=True)
-    val_dataloader = torch_data.DataLoader(val_gtiffdataset, num_workers=0, batch_size=64, drop_last=True)
-
+    train_dataloader = torch_data.DataLoader(
+        gtiffdataset, num_workers=0, batch_size=args.train_batch_size, drop_last=True)
+    val_dataloader = torch_data.DataLoader(
+        val_gtiffdataset, num_workers=0, batch_size=args.test_batch_size, drop_last=True)
 
     model = createDeepLabv3()
-
-
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
-    model.load_state_dict(
-        torch.load("../models/session_0/deeplabv3_pretrained---bn2d-38.pth")["model"]
-    )
-    model.module.name = "deeplabv3_pretrained"
-    model.to(device)
 
-    optimizer = torch.optim.SGD(lr=1e-3,
+
+    optimizer = torch.optim.SGD(lr=args.lr, momentum=0.9, weight_decay = 1e-4
         params= model.parameters()
     )
-    optimizer.load_state_dict(
-        torch.load("../models/session_0/deeplabv3_pretrained---bn2d-38.pth")['optimizer']
-    )
-    for g in optimizer.param_groups:
-        g['lr'] = 1e-4
+
+    if args.restart_checkpoint:
+        checkpoint = torch.load(args.checkpoint_path)
+        model.load_state_dict(checkpoint["model"])
+
+        model.to(device)
+
+        optimizer.load_state_dict(torch.load(checkpoint['optimizer'])
+        for g in optimizer.param_groups:
+            g['lr'] = args.lr
 
     criterion = torch.nn.MSELoss(reduction='mean')
 
     train_log = []
-    for epoch in range(epochs):
+    for epoch in range(args.epoch):
 
         train_loss = train(model, optimizer, criterion, device, train_dataloader)
         val_loss = validate(model, criterion, device, val_dataloader)
@@ -303,15 +356,13 @@ if __name__=="__main__":
             'optimizer': optimizer.state_dict()
         }
 
-        model_save_str = '{}/{}-{}-{}-{}.{}'.format(
-            model_save_pth, model.module.name,
-            "-", "retrain_1", epoch, "pth"
-        )
+        model_save_str = '{}/{}-{}.{}'.format(
+            args.checkpoint_save_path, args.checkpoint_prefix, epoch, "pth")
 
-        torch.save(
-            state,
-            model_save_str
-        )
+        torch.save(state, model_save_str)
+
         train_log.append([train_loss, val_loss])
-        np.save("train_log_retrain_1_{}".format(model.module.name), train_log)
-        print(epoch, train_loss, val_loss)
+
+        np.save("train_log_".format(args.checkpoint_prefix), train_log)
+
+    print(epoch, train_loss, val_loss)
