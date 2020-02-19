@@ -17,10 +17,10 @@ echo "== This is the scripting step! =="
 
 sleep 30
 
-python /projects/kadh5719/image-segmentation_antarctica/deep-learning/scripts/train_deeplab_pretrained.py
+python "/projects/kadh5719/image-segmentation_antarctica/deep-learning/scripts/train_deeplab_pretrained.py
   --lr 0.0001 --train-batch-size 64
   --restart-checkpoint True
   --checkpoint-path /projects/kadh5719/image-segmentation_antarctica/deep-learning/models/session_0/deeplabv3_pretrained---bn2d-38.pth
-  --checkpoint-prefix deeplabv3-s038-sgd-4-0.9-4
+  --checkpoint-prefix deeplabv3-s038-sgd-4-0.9-4"
 
 echo "== End of Job =="

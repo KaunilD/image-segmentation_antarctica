@@ -329,7 +329,7 @@ if __name__=="__main__":
       model = nn.DataParallel(model)
 
 
-    optimizer = torch.optim.SGD(lr=args.lr, momentum=0.9, weight_decay = 1e-4
+    optimizer = torch.optim.SGD(lr=args.lr, momentum=0.9, weight_decay = 1e-4,
         params= model.parameters()
     )
 
