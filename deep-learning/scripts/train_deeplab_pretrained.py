@@ -346,7 +346,7 @@ if __name__=="__main__":
     criterion = torch.nn.MSELoss(reduction='mean')
 
     train_log = []
-    for epoch in range(args.epoch):
+    for epoch in range(args.epochs):
 
         train_loss = train(model, optimizer, criterion, device, train_dataloader)
         val_loss = validate(model, criterion, device, val_dataloader)
@@ -363,6 +363,6 @@ if __name__=="__main__":
 
         train_log.append([train_loss, val_loss])
 
-        np.save("train_log_".format(args.checkpoint_prefix), train_log)
+        np.save("train_log_{}".format(args.checkpoint_prefix), train_log)
 
     print(epoch, train_loss, val_loss)
