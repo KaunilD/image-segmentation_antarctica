@@ -205,8 +205,8 @@ def get_dataset(parent_dir):
 
     ]
 
-    images_list = [path + '/' + i for i in images_list]
-    masks_list = [path + '/' + i for i in masks_list]
+    images_list = [parent_dir + '/' + i for i in images_list]
+    masks_list = [parent_dir + '/' + i for i in masks_list]
 
     return images_list, masks_list
 
