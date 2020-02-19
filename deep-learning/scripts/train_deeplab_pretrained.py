@@ -259,18 +259,18 @@ def create_args():
         help="train and test data split.",
     )
     parser.add_argument(
-        "--restart-checkpoint"
+        "--restart-checkpoint",
         default=False,
         type=bool,
         help="restart training from a checkpoint."
     )
     parser.add_argument(
-        "--checkpoint-path"
+        "--checkpoint-path",
         type=str,
         help="checkpoint path."
     )
     parser.add_argument(
-        "--checkpoint-prefix"
+        "--checkpoint-prefix",
         type=str,
         help="checkpoint prefix."
     )
