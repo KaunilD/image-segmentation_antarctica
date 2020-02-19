@@ -339,7 +339,7 @@ if __name__=="__main__":
 
         model.to(device)
 
-        optimizer.load_state_dict(torch.load(checkpoint['optimizer'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
         for g in optimizer.param_groups:
             g['lr'] = args.lr
 
