@@ -281,7 +281,7 @@ def create_args():
         help="path to save models in.",
     )
 
-    return parse.parse_args()
+    return parser.parse_args()
 
 if __name__=="__main__":
 
