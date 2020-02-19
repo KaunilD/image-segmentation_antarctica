@@ -294,7 +294,7 @@ if __name__=="__main__":
     args = create_args()
 
     epochs = args.epochs
-    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     images_list, masks_list = get_dataset(args.data_dir)
     train_len = int(args.train_test_split * len(images_list))
 
