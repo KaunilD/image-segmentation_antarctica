@@ -127,23 +127,36 @@ def focal_loss(output, target, device, gamma=2, alpha=0.5):
 
 def train(model, optimizer, criterion, device, dataloader):
     model.train()
+
     train_loss = 0.0
+    f1_metric = 0.0
+
     tbar = tqdm(dataloader)
+
     num_samples = len(dataloader)
     for i, sample in enumerate(tbar):
         image, target = sample[0].float(), sample[1].float()
         image, target = image.to(device), target.float().to(device)
-        optimizer.zero_grad()
+
         output = model(image)
+
+        y_pred = output['out'].data.cpu().numpy().ravel()
+        y_true = target.data.cpu().numpy().ravel()
+        f1_metric += f1_score(y_true > 0, y_pred > 0.1)
+
         loss = criterion(output['out'], target, device)
         loss.backward()
         optimizer.step()
+        optimizer.zero_grad()
+
         train_loss += loss.item()
+
         tbar.set_description('Train loss: %.3f' % (train_loss / (i + 1)))
-    return train_loss
+    return f1_metric/(num_samples)
 
 def validate(model, criterion, device, dataloader):
     model.eval()
+    f1_metric = 0.0
     val_loss = 0.0
     tbar = tqdm(dataloader)
     num_samples = len(dataloader)
@@ -153,10 +166,15 @@ def validate(model, criterion, device, dataloader):
             image, target = image.to(device), target.float().to(device)
 
             output = model(image)
+
+            y_pred = output['out'].data.cpu().numpy().ravel()
+            y_true = target.data.cpu().numpy().ravel()
+            f1_metric += f1_score(y_true > 0, y_pred > 0.1)
+
             loss = criterion(output['out'], target, device)
             val_loss += loss.item()
             tbar.set_description('Val loss: %.3f' % (train_loss / (i + 1)))
-    return val_loss
+    return f1_metric/(num_samples)
 
 def createDeepLabv3(outputchannels=1):
     model = models.segmentation.deeplabv3_resnet101(
@@ -257,15 +275,20 @@ if __name__=="__main__":
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
+    model.load_state_dict(
+        torch.load("../models/deeplabv3_pretrained---bn2d-38.pth")["model"]
+    )
     model.module.name = "deeplabv3_pretrained"
     model.to(device)
 
-    optimizer = torch.optim.SGD(lr=1e-4,
+    optimizer = torch.optim.SGD(lr=1e-5,
         params= model.parameters()
     )
+    optimizer.load_state_dict(
+        torch.load("../models/deeplabv3_pretrained---bn2d-38.pth")['optimizer']
+    )
 
-    criterion = focal_loss
-    metrics = {'f1_score': f1_score, 'auroc': roc_auc_score}
+    criterion = torch.nn.MSELoss(reduction='mean')
 
     train_log = []
     for epoch in range(epochs):
@@ -280,7 +303,7 @@ if __name__=="__main__":
 
         model_save_str = '{}/{}-{}-{}-{}.{}'.format(
             model_save_pth, model.module.name,
-            "-", "bn2d", epoch, "pth"
+            "-", "retrain_1", epoch, "pth"
         )
 
         torch.save(
@@ -288,5 +311,5 @@ if __name__=="__main__":
             model_save_str
         )
         train_log.append([train_loss, val_loss])
-        np.save("train_log_{}".format(model.module.name), train_log)
+        np.save("train_log_retrain_1_{}".format(model.module.name), train_log)
         print(epoch, train_loss, val_loss)
