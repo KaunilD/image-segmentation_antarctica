@@ -356,6 +356,7 @@ if __name__=="__main__":
 
         torch.save(state, model_save_str)
 
+        print(epoch, train_loss, val_loss)
         train_log.append([train_loss, val_loss])
 
         np.save("train_log_{}".format(args.checkpoint_prefix), train_log)
