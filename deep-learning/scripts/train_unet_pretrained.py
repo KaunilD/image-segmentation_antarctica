@@ -145,11 +145,11 @@ def train(model, optimizer, criterion, device, dataloader):
 
         output = model(image)
 
-        y_pred = output['out'].data.cpu().numpy().ravel()
+        y_pred = output.data.cpu().numpy().ravel()
         y_true = target.data.cpu().numpy().ravel()
         f1_metric += f1_score(y_true > 0, y_pred > 0.1)
 
-        loss = criterion(output['out'], target)
+        loss = criterion(output, target)
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
@@ -172,11 +172,11 @@ def validate(model, criterion, device, dataloader):
 
             output = model(image)
 
-            y_pred = output['out'].data.cpu().numpy().ravel()
+            y_pred = output.data.cpu().numpy().ravel()
             y_true = target.data.cpu().numpy().ravel()
             f1_metric += f1_score(y_true > 0, y_pred > 0.1)
 
-            loss = criterion(output['out'], target)
+            loss = criterion(output, target)
             val_loss += loss.item()
             tbar.set_description('Val loss: %.3f' % (train_loss / (i + 1)))
     return f1_metric/(num_samples)
@@ -293,7 +293,6 @@ if __name__=="__main__":
     """
     args = create_args()
 
-    epochs = args.epochs
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     images_list, masks_list = get_dataset(args.data_dir)
     train_len = int(args.train_test_split * len(images_list))
