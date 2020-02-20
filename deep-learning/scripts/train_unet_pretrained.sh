@@ -17,6 +17,6 @@ echo "== This is the scripting step! =="
 
 sleep 30
 # lr-model-momentum-weightdecay
-python /projects/kadh5719/image-segmentation_antarctica/deep-learning/scripts/train_unet_pretrained.py --lr 0.0001 --train-batch-size 64 --restart-checkpoint False --checkpoint-prefix unet-sgd-4-0.9-4
+python /projects/kadh5719/image-segmentation_antarctica/deep-learning/scripts/train_unet_pretrained.py --lr 0.0001 --train-batch-size 64 --checkpoint-prefix unet-sgd-4-0.9-4
 
 echo "== End of Job =="
