@@ -138,7 +138,7 @@ if __name__=="__main__":
     if torch.cuda.device_count() > 1:
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
-    model.load_state_dict(torch.load("../models/completed_sessions/deeplabv3-s038-sgd-4-0.9-4-28.pth")["model"])
+    model.load_state_dict(torch.load("../models/completed_sessions/deeplabv3-s038-sgd-4-0.9-4-29.pth")["model"])
     model.module.name = "deeplabv3_pretrained"
     model.to(device)
     model.eval()
