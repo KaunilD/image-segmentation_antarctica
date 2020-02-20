@@ -2,9 +2,9 @@
 
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --time=96:00:00
+#SBATCH --time=24:00:00
 #SBATCH --partition=sgpu
-#SBATCH --qos=long
+#SBATCH --qos=normal
 #SBATCH --output=unet-train-job-%j.out
 #SBATCH --job-name=unet-train-job
 
