@@ -182,7 +182,7 @@ def validate(model, criterion, device, dataloader):
     return f1_metric/(num_samples)
 
 def createUNet(outputchannels=1):
-    model = modelstorch.hub.load('mateuszbuda/brain-segmentation-pytorch', 'unet',
+    model = torch.hub.load('mateuszbuda/brain-segmentation-pytorch', 'unet',
     in_channels=3, out_channels=1, init_features=32, pretrained=True, progress=True)
     return model
 
@@ -299,7 +299,7 @@ if __name__=="__main__":
     train_len = int(args.train_test_split * len(images_list))
 
     gtiffdataset = GTiffDataset(
-        [images_list[:train_len], masks_list[:train_len]],
+        [images_list[:1], masks_list[:1]],
         tile_size=256, split='train', stride=256,
         transform=transforms.Compose([
             transforms.ToTensor()
@@ -307,7 +307,7 @@ if __name__=="__main__":
         debug=False)
 
     val_gtiffdataset = GTiffDataset(
-        [images_list[train_len:], masks_list[train_len:]],
+        [images_list[1:2], masks_list[1:2]],
         tile_size=256, split='val', stride=256,
         transform=transforms.Compose([
             transforms.ToTensor()
