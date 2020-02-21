@@ -195,5 +195,5 @@ if __name__=="__main__":
         #mask = mask[:, :, 1] > mask[:, :, 0]
 
         plt.imsave(
-            "{}_{}.png".format( os.path.basename(img).split(".")[0] , model.module.name ),
+            "{}_{}.png".format( os.path.basename(img).split(".")[0] , "unet" ),
             mask)
