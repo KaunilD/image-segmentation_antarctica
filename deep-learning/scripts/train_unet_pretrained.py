@@ -323,6 +323,7 @@ if __name__=="__main__":
       print("Using ", torch.cuda.device_count(), " GPUs!")
       model = nn.DataParallel(model)
 
+    model.to(device)
 
     optimizer = torch.optim.Adam(lr=args.lr, params= model.parameters())
 
