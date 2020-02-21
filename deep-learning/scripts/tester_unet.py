@@ -69,6 +69,9 @@ class GTiffDataset(torch_data.Dataset):
             print('Reading item # {} - {}/{}'.format(img, idx+1, len(self.root_dir)))
             image = Image.open(img)
             image = np.asarray(image, dtype=np.uint8)
+            m = np.mean(image, axis=(0, 1, 2))
+            s = np.std(image, axis=(0, 1, 2))
+            image = (image - m) / s
 
             i_tiles = self.get_tiles(image)
 
