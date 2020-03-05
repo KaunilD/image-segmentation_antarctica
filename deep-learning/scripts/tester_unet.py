@@ -37,11 +37,23 @@ class GTiffDataset(torch_data.Dataset):
         self.transform = transform
         self.debug = debug
         self.images = self.read_dir()
+    @staticmethod
+    def pad_image(image_in, tile_size):
+
+        h, w, c = image_in.shape
+
+        w_ = (w // tile_size + 1)*tile_size
+        h_ = (h // tile_size + 1)*tile_size
+
+        image_out = np.zeros((w_, h_, c))
+        image_out[:h, :w, :] = image_in
+        return image_out
 
     def get_tiles(self, image):
         i_tiles = []
-        width = image.shape[1] - image.shape[1]%self.tile_size
-        height = image.shape[0] - image.shape[0]%self.tile_size
+        image = pad_image(image, self.tile_size)
+        height, width, c = image.shape
+
 
         for i in range(0, height, self.stride):
             if i+self.tile_size > height:
@@ -118,13 +130,7 @@ def createUNet(outputchannels=1):
     return model
 
 if __name__=="__main__":
-    """
-    print("torch.cuda.is_available()   =", torch.cuda.is_available())
-    print("torch.cuda.device_count()   =", torch.cuda.device_count())
-    print("torch.cuda.device('cuda')   =", torch.cuda.device('cuda'))
-    print("torch.cuda.current_device() =", torch.cuda.current_device())
-    print()
-    """
+
     root_dir = '../../data/pre-processed/dryvalleys/WV03/'
     stride = 256
     tile_size = 256
@@ -163,7 +169,7 @@ if __name__=="__main__":
 
         image = Image.open(img)
         image = np.asarray(image, dtype=np.uint8)
-
+        image = GTiffDataset.pad_image(image, tile_size)
         mask = np.zeros(image.shape, dtype=np.float32)
 
         width = mask.shape[1] - mask.shape[1]%tile_size

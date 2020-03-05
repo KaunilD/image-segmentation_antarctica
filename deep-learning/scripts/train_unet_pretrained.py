@@ -38,7 +38,7 @@ class GTiffDataset(torch_data.Dataset):
         self.transform = transform
         self.debug = debug
         self.images, self.masks = self.read_dir()
-
+        
     def get_tiles(self, image, mask):
         i_tiles, m_tiles = [], []
         width = image.shape[1] - image.shape[1]%self.tile_size
