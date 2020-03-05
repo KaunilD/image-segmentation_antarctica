@@ -187,9 +187,6 @@ if __name__=="__main__":
 
                 counter+=1
 
-                if np.sum(img_tile>0) != 3*tile_size*tile_size:
-                    continue
-
                 output = outputs[counter]
                 output = np.moveaxis(output, 0, -1)
 
