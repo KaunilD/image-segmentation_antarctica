@@ -2,14 +2,10 @@
 
 ##### Research with [Dr. Michael John Willis](https://cires.colorado.edu/council-fellows/michael-willis) @ [CIRES](https://cires.colorado.edu/), CU Boulder
 
-#### Quick Links:
-
-1. [Deep Learning]()
-2. [Pre-Processing]()
-3. [Notebooks]()
+![](./res/screenshot.png)
 
 #### Roadmap:
 
 - [x] Polygons from shapefiles as ground-truth
-- [ ] Polygons + DEM as ground-truth
+- [x] Polygons + DEM as ground-truth
 
