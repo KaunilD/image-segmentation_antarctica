@@ -8,4 +8,5 @@
 
 - [x] Polygons from shapefiles as ground-truth
 - [x] Polygons + DEM as ground-truth
+- [x] Prunned model for TX2
 
