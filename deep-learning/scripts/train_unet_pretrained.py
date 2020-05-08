@@ -276,7 +276,7 @@ def create_args():
     )
     parser.add_argument(
         "--checkpoint-save-path",
-        default="/projects/kadh5719/image-segmentation_antarctica/deep-learning/models/",
+        default="/home/kadh5719/development/git/independent-study/deep-learning/models/",
         type=str,
         help="path to save models in.",
     )
