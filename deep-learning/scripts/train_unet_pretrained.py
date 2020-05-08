@@ -38,7 +38,7 @@ class GTiffDataset(torch_data.Dataset):
         self.transform = transform
         self.debug = debug
         self.images, self.masks = self.read_dir()
-        
+
     def get_tiles(self, image, mask):
         i_tiles, m_tiles = [], []
         width = image.shape[1] - image.shape[1]%self.tile_size
@@ -62,10 +62,11 @@ class GTiffDataset(torch_data.Dataset):
 
                 if np.prod(mask_tile.shape)!= 256*256 or np.prod(img_tile.shape)!= 3*256*256:
                     print("error")
-
+                """
                 if np.sum(img_tile>0) != 3*self.tile_size*self.tile_size or \
                 np.prod(mask_tile.shape) != self.tile_size*self.tile_size:
                     continue
+                """
 
                 i_tiles.append(img_tile)
                 m_tiles.append(mask_tile)
@@ -75,7 +76,7 @@ class GTiffDataset(torch_data.Dataset):
                     img_tile = np.moveaxis(img_tile, 0, -1)
                     plt.imsave("debug/" + str(i) + "_" + str(j) + "_img.png", img_tile)
                     plt.imsave("debug/" + str(i) + "_" + str(j) + "_mask.png", mask_tile)
-
+        print(len(i_tiles))
         return i_tiles, m_tiles
         # Calcium@20
     def read_dir(self):
@@ -202,7 +203,6 @@ def get_dataset(parent_dir):
         "104001002642C800_3031_mask.tif","104001002642C800_3031_mask.tif","104001002642C800_3031_mask.tif",
         "104001002642C800_3031_mask.tif","104001000647F000_3031_mask.tif","104001000647F000_3031_mask.tif",
         "1040010006846000_3031_mask.tif","10400100467A6F00_3031_mask.tif","104001004664AD00_3031_mask.tif"
-
     ]
 
     images_list = [parent_dir + '/' + i for i in images_list]
@@ -217,13 +217,13 @@ def create_args():
     )
     parser.add_argument(
         "--root-dir",
-        default="/projects/kadh5719/image-segmentation_antarctica",
+        default="/home/kadh5719/development/git/independent-study",
         type=str,
         help="root directory of the project.",
     )
     parser.add_argument(
         "--data-dir",
-        default="/projects/kadh5719/image-segmentation_antarctica/data/pre-processed/dryvalleys/WV03",
+        default="/home/kadh5719/development/git/independent-study/data/pre-processed/dryvalleys/WV03",
         type=str,
         help="directory containing image and masks in *.tif and *_mask.tif scheme.",
     )
@@ -235,7 +235,7 @@ def create_args():
     )
     parser.add_argument(
         "--epochs",
-        default=30,
+        default=50,
         type=int,
         help="training epochs.",
     )

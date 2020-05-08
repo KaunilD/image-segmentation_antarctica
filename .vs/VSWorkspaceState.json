@@ -1,7 +1,9 @@
 {
   "ExpandedNodes": [
     "",
+    "\\deep-learning",
     "\\deep-learning\\scripts"
   ],
+  "SelectedNode": "\\deep-learning\\scripts\\tester_unet.py",
   "PreviewInSolutionExplorer": false
 }
